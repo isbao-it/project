@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="common::title('编辑用户')"></head>
+<style>
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+    }
+</style>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <fieldset class="table-search-fieldset">
+            <legend>编辑用户信息</legend>
+            <div style="margin: 20px;">
+                <form id="editUserForm" class="layui-form">
+                    <input type="hidden" name="uid">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户名<font color="red">*</font></label>
+                        <div class="layui-input-block">
+                            <input type="text" name="uname" lay-verify="required" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">手机号<font color="red">*</font></label>
+                        <div class="layui-input-block">
+                            <input type="text" name="pnum" lay-verify="required|phone" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">新密码</label>
+                        <div class="layui-input-block">
+                            <input type="password" name="pwd" placeholder="留空则不修改" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">角色</label>
+                        <div class="layui-input-block">
+                            <select name="role" lay-verify="required">
+                                <option value="普通用户">普通用户</option>
+                                <option value="管理员">管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">积分</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="vote" min="0" max="9999" step="1" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">头像</label>
+                        <div class="layui-input-block">
+                            <button type="button" class="layui-btn layui-btn-primary" id="uploadAvatarBtn">
+                                <i class="layui-icon"></i> 重新上传
+                            </button>
+                            <input type="hidden" name="avatar" id="avatarUrl">
+                            <div id="avatarPreview"></div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            <button type="button" class="layui-btn layui-btn-normal" id="submitEditBtn">保存修改</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+    </div>
+</div>
+
+<script charset="utf-8" th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script>
+    // 使用layui模块，加载form、layer、upload三个模块
+    layui.use(['form', 'layer', 'upload'], function () {
+
+        // 获取layui模块的引用
+        var $ = layui.jquery,
+            form = layui.form,
+            layer = layui.layer,
+            upload = layui.upload;
+
+        /**
+         * 获取URL参数值的函数
+         * @param {string} name - 要获取的参数名
+         * @return {string|null} - 参数值，如果不存在则返回null
+         */
+        function getUrlParam(name) {
+            // 创建正则表达式匹配参数
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            // 从URL中获取参数值
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return decodeURIComponent(r[2]);  // 返回解码后的参数值
+            return null;  // 如果参数不存在则返回null
+        }
+
+        // 从URL中获取用户ID参数
+        var uid = getUrlParam('uid');
+        // 检查是否存在用户ID
+        if (!uid) {
+            // 显示错误提示并关闭弹窗
+            layer.msg('缺少用户ID', {icon: 2, time: 1500}, function() {
+                parent.layer.close(parent.layer.getFrameIndex(window.name));
+            });
+            return;  // 终止执行
+        }
+
+        // 加载用户数据（显式添加 Authorization 头）
+        $.ajax({
+            url: '/user/' + uid,
+            type: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            success: function(res) {
+                if (res.code === 200 && res.data) {
+                    var user = res.data;
+                    $('input[name="uid"]').val(user.uid);
+                    $('input[name="uname"]').val(user.uname);
+                    $('input[name="pnum"]').val(user.pnum);
+                    $('select[name="role"]').val(user.role);
+                    $('input[name="vote"]').val(user.vote);
+                    var avatarUrl = user.avatar || '';
+                    $('#avatarUrl').val(avatarUrl);
+                    if (avatarUrl) {
+                        $('#avatarPreview').html('<img src="' + avatarUrl + '" class="avatar-preview">');
+                    }
+                    form.render('select');
+                } else {
+                    layer.msg('加载用户信息失败', {icon: 2}, function() {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name));
+                    });
+                }
+            },
+            error: function(xhr) {
+                console.error('加载用户信息失败:', xhr.status);
+                layer.msg('加载失败，请刷新重试', {icon: 2});
+            }
+        });
+        // 头像上传
+/**
+ * 使用layui的upload模块实现头像上传功能
+ * 配置上传按钮、上传接口、文件类型限制等参数
+ * 处理上传成功和失败的回调逻辑
+ */
+        var uploadInst = upload.render({
+            elem: '#uploadAvatarBtn',    // 绑定上传按钮的元素选择器
+            url: '/upload/avatar',       // 上传接口的URL地址
+            accept: 'images',           // 设置接受的文件类型为图片
+            size: 2048,
+            done: function(res) {        // 上传成功的回调函数
+                console.log('上传返回:', res);
+                if (res.code === 200) {
+                    var url = res.data;  // 获取上传成功后返回的图片URL
+                    console.log('新头像URL:', url);
+                    $('#avatarUrl').val(url);  // 将头像URL设置到隐藏输入框的值中
+            // 更新头像预览，设置图片源，并添加错误处理（默认头像）
+                    $('#avatarPreview').html('<img src="' + url + '" class="avatar-preview" onerror="this.src=\'/static/images/avatar/admin.jpg\';">');
+                    layer.msg('上传成功', {icon: 1});  // 显示上传成功的提示消息
+                } else {
+            // 显示上传失败的提示消息，使用返回的错误信息或默认提示
+                    layer.msg(res.msg || '上传失败', {icon: 2});
+                }
+            },
+            error: function() {          // 上传失败的回调函数
+        // 显示上传失败的提示消息，提示用户重试
+                layer.msg('上传失败，请重试', {icon: 2});
+            }
+        });
+
+        // 提交编辑
+/**
+ * 提交编辑按钮点击事件处理函数
+ * 用于收集表单数据并进行验证，然后通过AJAX提交到服务器更新用户信息
+ */
+        $('#submitEditBtn').on('click', function () {
+
+    // 获取表单中各个输入字段的值
+            var uidVal = $('input[name="uid"]').val();
+            var uname = $('input[name="uname"]').val();
+            var pnum = $('input[name="pnum"]').val();
+            var role = $('select[name="role"]').val();
+            var vote = $('input[name="vote"]').val();
+            var avatar = $('#avatarUrl').val();
+            var pwd = $('input[name="pwd"]').val();
+
+    // 在控制台输出头像URL，用于调试
+            console.log('提交的数据 - avatar:', avatar);
+
+    // 表单验证
+            if (!uname) { layer.msg('用户名不能为空', {icon: 2}); return; }      // 验证用户名是否为空
+            if (!pnum) { layer.msg('手机号不能为空', {icon: 2}); return; }      // 验证手机号是否为空
+            if (!/^1[3-9]\d{9}$/.test(pnum)) { layer.msg('手机号格式不正确', {icon: 2}); return; }  // 验证手机号格式是否正确
+
+    // 验证积分是否为有效数字且在0-9999范围内
+            var voteNum = parseInt(vote);
+            if (isNaN(voteNum) || voteNum < 0 || voteNum > 9999) {
+                layer.msg('积分必须在 0 到 9999 之间', {icon: 2});
+                return;
+            }
+
+    // 构建要提交的表单数据对象
+            var formData = {
+                uid: uidVal,     // 用户ID
+                uname: uname,    // 用户名
+                pnum: pnum,     // 手机号码
+                role: role,     // 用户角色
+                vote: voteNum.toString(),  // 积分（转换为字符串）
+                avatar: avatar  // 头像URL
+            };
+    // 如果密码不为空，则添加到表单数据中
+            if (pwd && pwd.trim() !== '') formData.pwd = pwd;
+
+    // 发起AJAX请求更新用户信息
+            $.ajax({
+                url: '/user/update',         // 请求URL
+                type: 'PUT',                 // 请求方法为PUT
+                contentType: 'application/json',  // 设置请求内容类型为JSON
+                data: JSON.stringify(formData),   // 将表单数据转换为JSON字符串
+                success: function(res) {     // 请求成功回调函数
+                    if (res.code === 200) {  // 如果响应码为200，表示更新成功
+                        layer.msg('更新成功', {icon: 1, time: 1000}, function() {
+                    // 获取当前窗口的索引
+                            var index = parent.layer.getFrameIndex(window.name);
+                    // 关闭当前弹窗
+                            parent.layer.close(index);
+                    // 刷新父页面
+                            parent.location.reload();
+                        });
+                    } else {  // 如果响应码不为200，显示错误信息
+                        layer.msg(res.msg || '更新失败', {icon: 2});
+                    }
+                },
+                error: function() {  // 请求失败回调函数
+                    layer.msg('服务器错误', {icon: 2});
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

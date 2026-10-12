@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>商家信息列表</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" th:href="@{/static/lib/layui-v2.5.5/css/layui.css}" media="all">
+    <link rel="stylesheet" th:href="@{/static/css/layuimini.css}" media="all">
+    <link rel="stylesheet" th:href="@{/static/css/themes/default.css}" media="all">
+    <link rel="stylesheet" th:href="@{/static/lib/font-awesome-4.7.0/css/font-awesome.min.css}" media="all">
+    <link rel="stylesheet" th:href="@{/static/css/public.css}" media="all">
+    <style id="layuimini-bg-color"></style>
+</head>
+
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <div class="layui-form-item">
+
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label">公司名称</label>
+                        <div class="layui-input-inline">
+                            <input autocomplete="off" class="layui-input" id="name" name="name" type="text">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label" >公司地址</label>
+                        <div class="layui-input-inline">
+                            <input type="text" id="address" name="address" lay-verify="required" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label id="verifiedlabel" class="layui-form-label" style="width: 90px">状态:</label>
+                        <div class="layui-input-inline" style="width: 80px">
+                            <select  id="verified" style="width: 80px" name="verified" lay-verify="required" class="layui-input">
+                                <option value="1">认证</option>
+                                <option value="0">未认证</option>
+                                <option value=""></option>
+                            </select>
+
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-normal" id="querytem" lay-filter="data-search-btn"
+                                lay-submit
+                                type="submit"><i class="layui-icon"></i> 搜 索
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+
+        <!-- 表 格 信 息 -->
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <!-- 行 工 具 栏 -->
+        <script type="text/html" id="rowToolbarTpl">
+            <a class="layui-btn layui-btn-normal layui-btn-xs data-count-warn" lay-event="detail">详情</a>
+        </script>
+    </div>
+</div>
+
+
+<script charset="utf-8" th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script>
+    layui.use(['form', 'table', 'layer', 'laypage'], function () {
+        const $ = layui.jquery,
+            form = layui.form,
+            layer = layui.layer,
+            table = layui.table;
+
+
+        table.render({
+            elem: '#currentTableId',
+            url: '/company/list',
+            limits: [ 6,12],
+            limit: 6,
+            page: true,
+            defaultToolbar: ['filter', 'exports', 'print', {
+                title: '提示',
+                layEvent: 'LAYTABLE_TIPS',
+                icon: 'layui-icon-tips'
+            }],
+            // parseData:function(data){
+            //     return {
+            //         "code": 0,
+            //         "msg": "ds",
+            //         "count":1000,
+            //
+            //         "data":data
+            //     };
+            //
+            // },
+            done: function(res, curr, count){
+                //如果是异步请求数据方式，res即为你接口返回的信息。
+                //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+                console.log(res);
+                //得到当前页码
+                console.log(curr);
+                //得到数据总量
+                console.log(count);
+            },
+            cols: [
+                [
+                    {field: 'cid', width: 0, title: 'id', align: 'center',hide: true},
+                    {field: 'name', width: 400, title: '公司名称', align: 'center'},
+                    {field: 'address', width: 400, title: '公司地址', align: 'center'},
+                    {field: 'person', width: 120, title: '联系人', align: 'center'},
+                    {field: 'phone', width: 120, title: '联系电话', align: 'center'},
+                    {field: 'email', width: 220, title: '联系邮箱', align: 'center'},
+                    {fixed: 'right', width: 200, align: 'center', title: '操作', toolbar: '#rowToolbarTpl'}
+
+                ]
+            ],
+            id: 'testReload'
+        });
+
+
+        $('#querytem').on('click', function () {
+            // 搜索条件
+            const name = $('#name').val();
+            const address = $('#address').val();
+            const verified = $('select[name="verified"]').val();
+            table.reload('testReload', {
+                method: 'get'
+                , where: {
+                    'name': name,
+                    'address': address,
+                    'verified': verified
+
+                }
+                , page: {
+                    curr: 1
+                }
+            });
+        });
+
+
+        // 列表TABLE操作列监听事件
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'detail' )  {
+                var index = layer.open({
+                    title: data.name+'--详情',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin: true,
+                    shadeClose: false, //模式对话框
+                    area: ['600px', '380px'],
+                    content: '/page/companydetail?name=' + data.name +'&license='+data.license+'&person='+data.person
+                        +'&phone='+data.phone +'&email='+data.email + '&description='+data.description +'&url='+data.url+'&address='+data.address,
+                    success: function(layero, index){
+                        // 对话框打开后自动最大化
+                        layer.full(index);
+                    },
+                });
+                return false;
+
+            }
+        });
+
+
+    });
+</script>
+
+</body>
+</html>

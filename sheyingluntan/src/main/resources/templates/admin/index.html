@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="common::title('管理后台')"></head>
+<body>
+<!-- 顶部导航栏 -->
+<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 20px; background:#fff; border-bottom:1px solid #eee; margin-bottom:8px;">
+    <span>🔧 管理后台 — 欢迎，<strong id="displayName" style="color:#dc2626;"></strong></span>
+    <button class="layui-btn layui-btn-sm layui-btn-warm" onclick="doLogout()">
+        <i class="layui-icon layui-icon-logout"></i> 退出登录
+    </button>
+</div>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <div class="layui-tab" lay-filter="adminTab">
+            <ul class="layui-tab-title">
+                <li class="layui-this">用户管理</li>
+                <li>作品管理</li>
+                <li>作品视图</li>
+                <li>个人资料</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <iframe src="/user/list/page" style="width:100%; height:600px; border:none;"></iframe>
+                </div>
+                <div class="layui-tab-item">
+                    <iframe src="/pwork/list/page" style="width:100%; height:600px; border:none;"></iframe>
+                </div>
+                <div class="layui-tab-item">
+                    <iframe src="/view/workdetail/list/page" style="width:100%; height:600px; border:none;"></iframe>
+                </div>
+                <div class="layui-tab-item">
+                    <iframe id="profileFrame" style="width:100%; height:600px; border:none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script>
+    layui.use(['element'], function() {
+        var element = layui.element;
+    });
+
+    // 显示当前用户名
+    var uname = localStorage.getItem('uname') || '管理员';
+    document.getElementById('displayName').textContent = uname;
+
+    // 动态设置个人资料 iframe
+    var uid = localStorage.getItem('uid');
+    document.getElementById('profileFrame').src = '/user/edit/page?uid=' + uid;
+
+    // 退出登录
+    function doLogout() {
+        layui.use('layer', function() {
+            var layer = layui.layer;
+            layer.confirm('确定要退出登录吗？', {
+                title: '退出确认',
+                btn: ['确定', '取消']
+            }, function() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                localStorage.removeItem('uname');
+                localStorage.removeItem('uid');
+                document.cookie = 'token=; path=/; max-age=0';
+                window.location.href = '/login/page';
+            });
+        });
+    }
+</script>
+</body>
+</html>

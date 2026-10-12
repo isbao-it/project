@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.WorkDetailMapper">
+
+    <!-- 结果映射（注意数据库下划线字段与实体类属性的对应） -->
+    <resultMap id="BaseResultMap" type="com.pg.domain.WorkDetail">
+        <id column="pid" property="pid"/>
+        <result column="wtitle" property="wtitle"/>
+        <result column="wdesc" property="wdesc"/>
+        <result column="uname" property="uname"/>
+        <result column="real_like_count" property="realLikeCount"/>   <!-- 数据库列名是 real_like_count -->
+        <result column="wstatus" property="wstatus"/>
+        <result column="cwtime" property="cwtime"/>
+    </resultMap>
+
+    <!-- 条件分页查询 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT * FROM view_work_detail
+        <where>
+            <if test="wtitle != null and wtitle != ''">
+                AND wtitle LIKE CONCAT('%', #{wtitle}, '%')
+            </if>
+            <if test="uname != null and uname != ''">
+                AND uname LIKE CONCAT('%', #{uname}, '%')
+            </if>
+            <if test="wstatus != null and wstatus != ''">
+                AND wstatus = #{wstatus}
+            </if>
+        </where>
+        ORDER BY cwtime DESC
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.pg.domain.User">
+            <id property="uid" column="uid" jdbcType="VARCHAR"/>
+            <result property="uname" column="uname" jdbcType="VARCHAR"/>
+            <result property="pnum" column="pnum" jdbcType="VARCHAR"/>
+            <result property="role" column="role" jdbcType="OTHER"/>
+            <result property="pwd" column="pwd" jdbcType="VARCHAR"/>
+            <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+            <result property="vote" column="vote" jdbcType="VARCHAR"/>
+            <result property="uct" column="uct" jdbcType="TIMESTAMP"/>
+            <result property="status" column="status" jdbcType="OTHER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        uid,uname,pnum,
+        role,pwd,avatar,
+        vote,uct,status
+    </sql>
+
+    <select id="queryUser" resultType="com.pg.domain.User">
+        select * from user
+        <where>
+            <if test="uname != null and uname != ''">
+                and uname like concat('%', #{uname}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>

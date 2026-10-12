@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="common::title('用户信息列表')"></head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px;">
+                <div class="layui-form-item">
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-inline">
+                            <input autocomplete="off" class="layui-input" id="uname" name="uname" placeholder="请输入用户名">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label">手机号</label>
+                        <div class="layui-input-inline">
+                            <input type="text" id="pnum" name="pnum" class="layui-input" placeholder="请输入手机号">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label" style="width: 90px">角色</label>
+                        <div class="layui-input-inline" style="width: 120px">
+                            <select id="role" name="role" class="layui-input">
+                                <option value="">全部</option>
+                                <option value="普通用户">普通用户</option>
+                                <option value="管理员">管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label" style="width: 90px">状态</label>
+                        <div class="layui-input-inline" style="width: 100px">
+                            <select id="status" name="status" class="layui-input">
+                                <option value="">全部</option>
+                                <option value="正常">正常</option>
+                                <option value="禁用">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-normal" id="searchBtn" lay-submit><i class="layui-icon"></i> 搜 索</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-primary" id="addBtn"><i class="layui-icon"></i> 新 增</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-danger" id="batchDeleteBtn"><i class="layui-icon"></i> 批量删除</button>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter">
+            <script type="text/html" id="rowToolbarTpl">
+                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="detail">详情</a>
+                <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="edit">编辑</a>
+                {{# if(d.status === '正常') { }}
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="disable">禁用</a>
+                {{# } else { }}
+                <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="enable">启用</a>
+                {{# } }}
+            </script>
+        </table>
+    </div>
+</div>
+
+<script charset="utf-8" th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script th:inline="none">
+    layui.use(['form', 'table', 'layer'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            layer = layui.layer,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            url: '/user/list',
+            request: { pageName: 'pageNum', limitName: 'pageSize' },
+            limits: [6, 12, 20, 50],
+            limit: 6,
+            page: true,
+            parseData: function(res) {
+                return {
+                    code: res.code === 200 ? 0 : 1,
+                    msg: res.msg,
+                    count: res.total,
+                    data: res.data
+                };
+            },
+            defaultToolbar: ['filter', 'exports', 'print'],
+            cols: [[
+                {type: 'checkbox', width: 50, align: 'center'},
+                {field: 'uid', width: 200, title: '用户ID', align: 'center'},
+                {field: 'uname', width: 150, title: '用户名', align: 'center'},
+                {field: 'pnum', width: 130, title: '手机号', align: 'center'},
+                {field: 'role', width: 100, title: '角色', align: 'center', templet: function(d) {
+                        return d.role === '管理员' ? '<span style="color:red;">管理员</span>' : '普通用户';
+                    }},
+                {field: 'status', width: 80, title: '状态', align: 'center', templet: function(d) {
+                        return d.status === '正常' ? '<span style="color:green;">正常</span>' : '<span style="color:red;">禁用</span>';
+                    }},
+                {field: 'vote', width: 100, title: '积分', align: 'center'},
+                {field: 'avatar', width: 80, title: '头像', align: 'center', templet: function(d) {
+                        var url = (d.avatar && d.avatar !== '') ? d.avatar : '/static/images/avatar/admin.jpg';
+                        return '<img src="' + url + '" style="width:30px;height:30px;border-radius:50%;" onerror="this.src=\'/static/images/avatar/admin.jpg\'">';
+                    }},
+                {field: 'uct', width: 170, title: '注册时间', align: 'center', templet: function(d) {
+                        return d.uct || '';
+                    }},
+                {fixed: 'right', width: 200, align: 'center', title: '操作', toolbar: '#rowToolbarTpl'}
+            ]],
+            id: 'userTable'
+        });
+
+        $('#searchBtn').on('click', function () {
+            table.reload('userTable', {
+                where: {
+                    uname: $('#uname').val(),
+                    pnum: $('#pnum').val(),
+                    role: $('#role').val(),
+                    status: $('#status').val()
+                },
+                page: {curr: 1}
+            });
+        });
+
+        $('#addBtn').on('click', function () {
+            layer.open({
+                type: 2,
+                title: '新增用户',
+                area: ['600px', '600px'],
+                content: '/user/add/page',
+                end: function() { table.reload('userTable'); }
+            });
+        });
+
+        $('#batchDeleteBtn').on('click', function () {
+            var checkStatus = table.checkStatus('userTable');
+            var selected = checkStatus.data;
+            if (selected.length === 0) {
+                layer.msg('请至少选择一条数据', {icon: 2});
+                return;
+            }
+            var uidList = [];
+            $.each(selected, function(i, item) { uidList.push(item.uid); });
+            layer.confirm('确定要永久删除选中的 ' + selected.length + ' 个用户吗？删除后不可恢复！', {
+                btn: ['确定', '取消']
+            }, function(index) {
+                $.ajax({
+                    url: '/user/batch',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify(uidList),
+                    success: function(res) {
+                        if (res.code === 200) {
+                            layer.msg('批量删除成功', {icon: 1});
+                            table.reload('userTable');
+                        } else {
+                            layer.msg(res.msg || '批量删除失败', {icon: 2});
+                        }
+                        layer.close(index);
+                    },
+                    error: function() {
+                        layer.msg('服务器错误', {icon: 2});
+                        layer.close(index);
+                    }
+                });
+            });
+        });
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            console.log('当前行数据:', data);
+
+            if (obj.event === 'detail') {
+                $.get('/user/' + data.uid, function(res) {
+                    if (res.code === 200 && res.data) {
+                        var u = res.data;
+                        var avatarUrl = (u.avatar && u.avatar !== '') ? u.avatar : '/static/images/avatar/admin.jpg';
+                        var html = '<div style="padding:20px;line-height:1.8;">' +
+                            '<div style="text-align:center;"><img src="' + avatarUrl + '" style="width:80px;height:80px;border-radius:50%;" onerror="this.src=\'/static/images/avatar/admin.jpg\'"></div>' +
+                            '<p><strong>用户ID：</strong>' + (u.uid || '') + '</p>' +
+                            '<p><strong>用户名：</strong>' + (u.uname || '') + '</p>' +
+                            '<p><strong>手机号：</strong>' + (u.pnum || '') + '</p>' +
+                            '<p><strong>角色：</strong>' + (u.role || '') + '</p>' +
+                            '<p><strong>状态：</strong><span style="color:' + (u.status === '正常' ? 'green' : 'red') + '">' + (u.status || '') + '</span></p>' +
+                            '<p><strong>积分：</strong>' + (u.vote || '0') + '</p>' +
+                            '<p><strong>注册时间：</strong>' + (u.uct || '') + '</p>' +
+                            '</div>';
+                        layer.open({title: data.uname + ' —— 详情', type: 1, area: ['500px', '480px'], content: html, btn: ['关闭']});
+                    } else {
+                        layer.msg(res.msg || '获取详情失败', {icon: 2});
+                    }
+                }).fail(function() { layer.msg('请求失败', {icon: 2}); });
+            }
+            else if (obj.event === 'edit') {
+                var userId = data.uid;
+                console.log('编辑时取到的uid:', userId);
+                if (!userId) {
+                    layer.msg('无法获取用户ID', {icon: 2});
+                    return;
+                }
+                layer.open({
+                    type: 2,
+                    title: '编辑用户 - ' + data.uname,
+                    area: ['600px', '600px'],
+                    content: '/user/edit/page?uid=' + userId,
+                    end: function() { table.reload('userTable'); }
+                });
+            }
+            else if (obj.event === 'disable') {
+                layer.confirm('确定要禁用用户 "' + data.uname + '" 吗？', {
+                    btn: ['确定', '取消']
+                }, function(index) {
+                    $.ajax({
+                        url: '/user/disable/' + data.uid,
+                        type: 'PUT',
+                        success: function(res) {
+                            if (res.code === 200) {
+                                layer.msg('禁用成功', {icon: 1});
+                                table.reload('userTable');
+                            } else {
+                                layer.msg(res.msg || '操作失败', {icon: 2});
+                            }
+                            layer.close(index);
+                        },
+                        error: function() {
+                            layer.msg('服务器错误', {icon: 2});
+                            layer.close(index);
+                        }
+                    });
+                });
+            }
+            else if (obj.event === 'enable') {
+                layer.confirm('确定要启用用户 "' + data.uname + '" 吗？', {
+                    btn: ['确定', '取消']
+                }, function(index) {
+                    $.ajax({
+                        url: '/user/enable/' + data.uid,
+                        type: 'PUT',
+                        success: function(res) {
+                            if (res.code === 200) {
+                                layer.msg('启用成功', {icon: 1});
+                                table.reload('userTable');
+                            } else {
+                                layer.msg(res.msg || '操作失败', {icon: 2});
+                            }
+                            layer.close(index);
+                        },
+                        error: function() {
+                            layer.msg('服务器错误', {icon: 2});
+                            layer.close(index);
+                        }
+                    });
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

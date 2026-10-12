@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.PworkMapper">
+<!--    字段映射-->
+    <resultMap id="BaseResultMap" type="com.pg.domain.Pwork">
+        <id column="pid" property="pid"/>
+        <result column="uid" property="uid"/>
+        <result column="wtitle" property="wtitle"/>
+        <result column="wdesc" property="wdesc"/>
+        <result column="vurl" property="vurl"/>
+        <result column="viewcount" property="viewcount"/>
+        <result column="votecount" property="votecount"/>
+        <result column="wstatus" property="wstatus"/>
+        <result column="cwtime" property="cwtime"/>
+        <result column="likep" property="likep"/>
+    </resultMap>
+<!--    公共SQL片段-->
+    <sql id="Base_Column_List">
+        pid, uid, wtitle, wdesc, vurl, viewcount, votecount, wstatus, cwtime, likep
+    </sql>
+
+    <!-- 条件分页查询（按标题模糊查询、按状态筛选等） -->
+    <select id="queryPwork" parameterType="com.pg.domain.Pwork" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from pwork
+        <where>
+            <if test="uid != null and uid != ''">
+                and uid = #{uid}
+            </if>
+            <if test="wtitle != null and wtitle != ''">
+                <bind name="wtitlePattern" value="'%' + wtitle + '%'"/>
+                and wtitle like #{wtitlePattern}
+            </if>
+            <if test="wstatus != null and wstatus != ''">
+                and wstatus = #{wstatus}
+            </if>
+            <if test="wdesc != null and wdesc != ''">
+                <bind name="wdescPattern" value="'%' + wdesc + '%'"/>
+                and wdesc like #{wdescPattern}
+            </if>
+        </where>
+        order by cwtime desc
+    </select>
+
+
+
+</mapper>

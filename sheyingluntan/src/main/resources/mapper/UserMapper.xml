@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.UserMapper">
+<!--    定义了 BaseResultMap 和 Base_Column_List。-->
+<!--    BaseResultMap 负责将数据库 user 表的字段与 com.pg.domain.User 实体类的属性进行精准映射-->
+<!--    特别是指定了 uct 字段的 jdbcType 为 TIMESTAMP-->
+    <resultMap id="BaseResultMap" type="com.pg.domain.User">
+        <id property="uid" column="uid" jdbcType="VARCHAR"/>
+        <result property="uname" column="uname" jdbcType="VARCHAR"/>
+        <result property="pnum" column="pnum" jdbcType="VARCHAR"/>
+        <result property="role" column="role" jdbcType="VARCHAR"/>
+        <result property="pwd" column="pwd" jdbcType="VARCHAR"/>
+        <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+        <result property="vote" column="vote" jdbcType="VARCHAR"/>
+        <result property="uct" column="uct" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        uid, uname, pnum, role, pwd, avatar, vote, uct, status
+    </sql>
+
+    <!-- 多条件分页查询（支持用户名、手机号、角色、状态） -->
+    <!--查询语句 queryUser 实现了动态多条件检索功能-->
+    <select id="queryUser" resultMap="BaseResultMap" >
+        select <include refid="Base_Column_List"/>
+        from user
+        <where>
+            <if test="uname != null and uname != ''">
+                <bind name="unamePattern" value="'%' + uname + '%'"/>
+                and uname like #{unamePattern}
+--                 MyBatis 自带的 bind 标签来预处理模糊查询的参数。
+            </if>
+            <if test="pnum != null and pnum != ''">
+                <bind name="pnumPattern" value="'%' + pnum + '%'"/>
+                and pnum like #{pnumPattern}
+            </if>
+            <if test="role != null and role != ''">
+                and role = #{role}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by uct desc
+    </select>
+
+</mapper>

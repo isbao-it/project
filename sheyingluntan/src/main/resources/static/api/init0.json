@@ -1,0 +1,63 @@
+{
+  "homeInfo": {
+    "title": "商家入驻审核",
+    "href": "/page/AuditCompanyList"
+  },
+  "logoInfo": {
+    "title": "",
+    "image": "/static/images/lg.png",
+    "href": ""
+  },
+  "menuInfo": [
+    {
+      "title": "",
+      "icon": "fa fa-user-plus",
+      "href": "",
+      "target": "_self",
+      "child": [
+        {
+          "title": "用户管理",
+          "href": "",
+          "icon": "fa fa-user-plus",
+          "target": "_self",
+          "child": [
+            {
+              "title": "用户列表",
+              "href": "/page/userList",
+              "icon": "fa fa-address-book",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "公告管理",
+          "href": "",
+          "icon": "fa fa-gears",
+          "target": "_self",
+          "child": [
+            {
+              "title": "公告列表",
+              "href": "/page/notice",
+              "icon": "fa fa-clipboard",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "审核管理",
+          "href": "",
+          "icon": "fa fa-file-text",
+          "target": "_self",
+          "child": [
+            {
+              "title": "商家入驻审核",
+              "href": "/page/AuditCompanyList",
+              "icon": "fa fa-tasks",
+              "target": "_self"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

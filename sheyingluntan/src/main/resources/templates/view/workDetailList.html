@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="common::title('作品详情视图')"></head>
+<style>
+    .layui-table-cell {
+        overflow: visible !important;
+        padding: 0 !important;
+        height: auto !important;
+        line-height: normal !important;
+    }
+    .layui-table tbody tr { height: 120px; }
+    .layui-table tbody td { vertical-align: middle !important; }
+    .work-img {
+        height: 100px;
+        width: auto;
+        max-width: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+</style>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px;">
+                <div class="layui-form-item">
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label">作品标题</label>
+                        <div class="layui-input-inline">
+                            <input autocomplete="off" class="layui-input" id="wtitle" name="wtitle" placeholder="请输入标题关键字">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label">作者</label>
+                        <div class="layui-input-inline">
+                            <input type="text" id="uname" name="uname" class="layui-input" placeholder="请输入用户名">
+                        </div>
+                    </div>
+                    <div class="layui-inline layui-form-pane">
+                        <label class="layui-form-label" style="width: 90px">状态</label>
+                        <div class="layui-input-inline" style="width: 100px">
+                            <select id="wstatus" name="wstatus" class="layui-input">
+                                <option value="">全部</option>
+                                <option value="展示">展示</option>
+                                <option value="隐藏">隐藏</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-normal" id="searchBtn" lay-submit><i class="layui-icon"></i> 搜 索</button>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+        <script type="text/html" id="rowToolbarTpl">
+            <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="detail">详情</a>
+        </script>
+    </div>
+</div>
+
+<script charset="utf-8" th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script th:inline="none">
+    layui.use(['form', 'table', 'layer'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            layer = layui.layer,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            url: '/view/workdetail/list',
+            request: { pageName: 'pageNum', limitName: 'pageSize' },
+            limits: [6, 12, 20, 50],
+            limit: 6,
+            page: true,
+            parseData: function(res) {
+                return {
+                    code: res.code === 200 ? 0 : 1,
+                    msg: res.msg,
+                    count: res.total,
+                    data: res.data
+                };
+            },
+            defaultToolbar: ['filter', 'exports', 'print'],
+            where: {},
+            cols: [[
+                {
+                    field: 'vurl',
+                    title: '图片',
+                    width: 250,
+                    align: 'center',
+                    templet: function(d) {
+                        var imgUrl = (d.vurl && d.vurl !== '') ? d.vurl : '/static/images/default.jpg';
+                        return '<img src="' + imgUrl + '" class="work-img" onerror="this.src=\'/static/images/default.jpg\'">';
+                    }
+                },
+                {field: 'wtitle', width: 200, title: '作品标题', align: 'center'},
+                {field: 'uname', width: 150, title: '作者', align: 'center'},
+                {field: 'pid', width: 100, title: '作品ID', align: 'center'},
+                {field: 'realLikeCount', width: 120, title: '点赞数', align: 'center'},
+                {fixed: 'right', width: 100, align: 'center', title: '操作', toolbar: '#rowToolbarTpl'}
+            ]],
+            id: 'workDetailTable'
+        });
+
+        $('#searchBtn').on('click', function () {
+            table.reload('workDetailTable', {
+                where: {
+                    wtitle: $('#wtitle').val(),
+                    uname: $('#uname').val(),
+                    wstatus: $('#wstatus').val()
+                },
+                page: {curr: 1}
+            });
+        });
+
+        // 图片点击放大
+        $(document).on('click', '.work-img', function() {
+            var src = $(this).attr('src');
+            layer.photos({
+                photos: { "data": [{ "src": src, "alt": "作品图片" }] },
+                anim: 5
+            });
+        });
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'detail') {
+                $.get('/view/workdetail/' + data.pid, function(res) {
+                    if (res.code === 200 && res.data) {
+                        var d = res.data;
+                        var avatarUrl = (d.avatar && d.avatar !== '') ? d.avatar : '/static/images/avatar/admin.jpg';
+                        var html = '<div style="padding:20px;line-height:1.8;">' +
+                            '<div style="text-align:center; margin-bottom:15px;">' +
+                            '<img src="' + (d.vurl || '/static/images/default.jpg') + '" style="max-width:100%;max-height:300px;border-radius:8px;" onerror="this.src=\'/static/images/default.jpg\'">' +
+                            '</div>' +
+                            '<div style="text-align:center; margin-bottom:10px;">' +
+                            '<img src="' + avatarUrl + '" style="width:50px;height:50px;border-radius:50%;" onerror="this.src=\'/static/images/avatar/admin.jpg\'">' +
+                            '</div>' +
+                            '<p><strong>作品标题：</strong>' + (d.wtitle || '') + '</p>' +
+                            '<p><strong>作品描述：</strong>' + (d.wdesc || '') + '</p>' +
+                            '<p><strong>作者：</strong>' + (d.uname || '') + '</p>' +
+                            '<p><strong>点赞数：</strong>' + (d.realLikeCount || '0') + '</p>' +
+                            '<p><strong>分类：</strong>' + (d.pcname || '') + '</p>' +
+                            '<p><strong>状态：</strong>' + (d.wstatus === '展示' ? '<span style="color:green;">展示</span>' : '<span style="color:gray;">隐藏</span>') + '</p>' +
+                            '<p><strong>创建时间：</strong>' + (d.cwtime || '') + '</p>' +
+                            '</div>';
+                        layer.open({
+                            title: '作品详情 - ' + d.wtitle,
+                            type: 1,
+                            area: ['650px', '600px'],
+                            content: html,
+                            btn: ['关闭']
+                        });
+                    } else {
+                        layer.msg(res.msg || '获取详情失败', {icon: 2});
+                    }
+                }).fail(function() {
+                    layer.msg('请求失败，请检查网络', {icon: 2});
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

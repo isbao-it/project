@@ -1,0 +1,82 @@
+# 服务器配置
+server:
+  port: 8082  # 服务器端口号设置为8082
+
+# Spring框架配置
+spring:
+  # Jackson日期格式化配置
+  jackson:
+    date-format: yyyy-MM-dd  # 日期格式为年-月-日
+    time-zone: GMT+8  # 时区设置为GMT+8
+  # Servlet文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB  # 单个文件最大大小为10MB
+      max-request-size: 100MB  # 请求总大小最大为100MB
+    main.allow-circular-references: true  # 允许循环引用
+
+  # Spring Boot DevTools配置
+  devtools:
+    restart:
+      enabled: true  # 启用自动重启功能
+      additional-paths: src/main/java  # 额外监控的路径
+      exclude: test/**  # 排除测试目录不监控
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource  # 使用Druid数据源
+    url: ${DB_URL:jdbc:mysql://localhost:3306/db_pg?serverTimezone=Asia/Shanghai}  # 数据库连接URL（环境变量 DB_URL 可覆盖）
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}  # 数据库密码（环境变量 DB_PASSWORD 可覆盖）
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL驱动类名
+  # Spring MVC静态资源配置
+  mvc:
+    static-path-pattern: /static/**  # 静态资源访问路径模式
+  # Thymeleaf模板引擎配置
+  thymeleaf:
+    cache: false  # 禁用模板缓存
+    prefix: classpath:/templates/  # 模板文件前缀
+    suffix: .html  # 模板文件后缀
+    encoding: utf-8  # 编码格式为UTF-8
+    servlet:
+      content-type: text/html  # 内容类型为HTML
+    mode: HTML5  # 使用HTML5模式
+
+# MyBatis-Plus配置
+mybatis-plus:
+  # 全局配置
+  global-config:
+    db-config:
+      id-type: auto  # ID自动生成
+      field-strategy: not_empty  # 字段策略：非空时更新
+      column-underline: true  # 开启下划线转驼峰命名
+      logic-delete-value: 0  # 逻辑删除值：0表示已删除
+      logic-not-delete-value: 1  # 逻辑未删除值：1表示未删除
+      db-type: mysql  # 数据库类型为MySQL
+    refresh: false  # 禁用刷新
+  # MyBatis配置
+  configuration:
+    map-underscore-to-camel-case: true  # 开启下划线转驼峰命名
+    cache-enabled: false  # 禁用二级缓存
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 使用标准输出实现日志
+
+  # Mapper XML文件位置
+  mapper-locations: classpath:/mapper/*.xml  # Mapper XML文件路径
+
+# PageHelper分页插件配置
+pagehelper:
+  helper-dialect: mysql  # 数据库为MySQL
+  reasonable: true  # 启用合理化参数
+  support-methods-arguments: true  # 支持通过Mapper接口参数传递分页参数
+  params: count=countSql  # 获取count查询的方法名
+
+  # 文件上传配置
+file:
+    upload:
+      avatar: uploads/avatar/  # 头像文件上传路径
+
+jwt:
+  # 固定签名密钥（Base64 编码的 256 位密钥），服务重启不会导致 token 失效
+  # 生成方式: echo -n "your-custom-secret-string" | base64
+  # 签名密钥由环境变量 JWT_SECRET 注入（Base64 编码）；本地默认值是开发占位值，部署务必设置 JWT_SECRET
+  secret: ${JWT_SECRET:ZGV2LW9ubHktcGctcGhvdG9ncmFwaHktc2VjcmV0LWNoYW5nZS1tZQ==}
+  expire: ${JWT_EXPIRE:86400000}   # 24小时，单位毫秒
