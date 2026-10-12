@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教室座位随机排座</title>
+  <style>
+    :root { color-scheme: light; font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; color: #18312d; background: #f3f6f2; }
+    * { box-sizing: border-box; }
+    body { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
+    .no-print { }
+    .page-heading { margin-bottom: 24px; }
+    .page-heading h1 { margin: 0 0 8px; font-size: clamp(1.65rem, 4vw, 2.3rem); letter-spacing: .03em; }
+    .page-heading p { margin: 0; color: #55706a; }
+    #control-area, #status-area { border: 1px solid #d7e1d9; border-radius: 14px; background: #fff; padding: 20px; margin-bottom: 16px; }
+    #control-area { display: grid; gap: 18px; }
+    .field-row { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
+    .field { display: grid; gap: 7px; min-width: 150px; }
+    .field.grow { flex: 1 1 280px; }
+    label, .field-label { font-size: .9rem; font-weight: 700; }
+    input, select, textarea, button { font: inherit; }
+    input[type="number"], input[type="text"], input[type="file"], select, textarea { width: 100%; border: 1px solid #bdccc4; border-radius: 8px; background: #fff; color: inherit; padding: 10px 11px; }
+    input:focus, select:focus, textarea:focus, button:focus-visible { outline: 3px solid #a6d8c4; outline-offset: 2px; }
+    .field-error { min-height: 1.2em; color: #a33025; font-size: .85rem; }
+    .hint { margin: 0; color: #607771; font-size: .9rem; }
+    .preview-wrap { overflow-x: auto; border: 1px solid #e0e8e2; border-radius: 9px; }
+    .preview-table, #print-area table { border-collapse: collapse; width: 100%; }
+    .preview-table th, .preview-table td, #print-area th, #print-area td { border: 1px solid #cbd8d0; padding: 9px 11px; text-align: left; overflow-wrap: anywhere; }
+    .preview-table th { background: #edf4ef; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button { border: 0; border-radius: 8px; padding: 10px 16px; background: #176b52; color: white; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #e8f1ec; color: #1a5444; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    #status-area { color: #3b5750; }
+    #status-area p { margin: 0; }
+    #status-area [data-role="status-message"] { font-weight: 700; }
+    #status-area [data-role="unassigned"] { margin-top: 6px; color: #9a4b1d; }
+    #status-area textarea { margin-top: 12px; min-height: 110px; font-family: ui-monospace, monospace; }
+    #print-area { margin-top: 26px; padding: 20px; border: 1px solid #d7e1d9; border-radius: 14px; background: #fff; }
+    #print-area:empty { display: none; }
+    #print-area [data-role="podium"] { margin: 0 0 12px; padding: 10px; border: 1px solid #506a60; text-align: center; font-weight: 700; }
+    @media (max-width: 600px) { body { padding: 18px 12px 32px; } #control-area, #status-area { padding: 15px; } .field { flex: 1 1 130px; } }
+    @media print {
+      .no-print { display: none !important; }
+      body > :not(#print-area) { display: none !important; }
+      #print-area { display: block !important; }
+      #print-area table { width: 100%; border-collapse: collapse; }
+      #print-area tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-heading no-print">
+    <h1>教室座位随机排座</h1>
+    <p>离线读取名单，前排优先安排；相同种子可重复生成相同座位表。</p>
+  </header>
+  <main id="control-area" class="no-print">
+    <section class="field grow">
+      <label>学生名单（.xlsx / .csv）
+      <input data-role="file" type="file" accept=".xlsx,.csv">
+      </label>
+      <p class="hint">文件只在当前页面读取，不会上传。</p>
+    </section>
+    <section data-role="column-section" hidden>
+      <div class="field">
+        <label>姓名列
+        <select data-role="column"></select>
+        </label>
+      </div>
+      <p data-role="column-message" class="field-error" aria-live="polite"></p>
+      <p data-role="column-suggestion" class="hint"></p>
+      <div class="preview-wrap">
+        <table class="preview-table" data-role="preview" aria-label="名单前五行预览"></table>
+      </div>
+      <button data-role="confirm" type="button">确认姓名列</button>
+    </section>
+    <div class="field-row">
+      <div class="field">
+        <label>排数
+        <input data-role="rows" type="text" inputmode="numeric" value="6" autocomplete="off">
+        </label>
+      </div>
+      <div class="field">
+        <label>每排座位数
+        <input data-role="columns" type="text" inputmode="numeric" value="8" autocomplete="off">
+        </label>
+      </div>
+      <div class="field grow">
+        <label>随机种子（留空自动生成）
+        <input data-role="seed" type="text" maxlength="128" autocomplete="off">
+        </label>
+      </div>
+    </div>
+    <p data-role="dimension-message" class="field-error" aria-live="polite"></p>
+    <div class="actions">
+      <button data-role="generate" type="button" disabled>生成座位表</button>
+      <button data-role="copy" class="secondary" type="button" disabled>复制 Markdown</button>
+      <button data-role="print" class="secondary" type="button" disabled>打印</button>
+    </div>
+  </main>
+  <section id="status-area" class="no-print" aria-live="polite">
+    <p data-role="status-message"></p>
+    <p data-role="unassigned"></p>
+    <textarea data-role="manual-copy" class="no-print" aria-label="手动复制 Markdown" readonly hidden></textarea>
+  </section>
+  <section id="print-area" aria-label="座位表打印区"></section>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="seat.js"></script>
+  <script src="parse.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
