@@ -1,0 +1,50 @@
+<view class="following-page">
+  <view class="following-header">
+    <view style="height:{{statusBarH}}px"></view>
+    <view class="following-title">
+      <view style="position:absolute;left:0" bindtap="goBack" role="button" aria-label="返回">返回</view>
+      关注
+    </view>
+  </view>
+  <!-- 内部滚动不触发页面触底事件，显式复用相同的刷新和分页处理函数。 -->
+  <scroll-view class="feed-scroll" scroll-y="{{true}}" lower-threshold="100"
+    refresher-enabled="{{loggedIn}}" refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onPullDownRefresh" bindscrolltolower="onReachBottom">
+    <view wx:if="{{!loggedIn}}" class="feed-state">
+      <text>登录后查看关注作者的作品</text>
+      <view class="feed-action" bindtap="goLogin" role="button" aria-label="去登录">去登录</view>
+    </view>
+    <view wx:else class="feed-content">
+      <view wx:for="{{list}}" wx:key="pid" class="feed-card" data-pid="{{item.pid}}" bindtap="goDetail" role="link" aria-label="{{item.wtitle}}">
+        <view class="feed-cover">
+          <image wx:if="{{item.imageUrl}}" class="feed-image" src="{{item.imageUrl}}" mode="aspectFill" lazy-load="{{true}}" />
+          <view wx:else class="feed-image feed-image-placeholder">暂无图片</view>
+          <view class="card-views">{{item.viewcount}}</view>
+        </view>
+        <view class="feed-body">
+          <view class="feed-title">{{item.wtitle}}</view>
+          <view class="feed-author">
+            <image wx:if="{{item.avatarUrl}}" class="author-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="author-avatar author-placeholder" aria-hidden="true"></view>
+            <text class="author-name">{{item.uname || '未知用户'}}</text>
+            <text wx:if="{{item.pcname}}" class="category-tag">{{item.pcname}}</text>
+          </view>
+          <view class="feed-likes" aria-label="点赞数 {{item.likep}}">
+            <view class="heart-icon" aria-hidden="true"></view>
+            <text>{{item.likep}}</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{loading}}" class="feed-state">加载中...</view>
+      <view wx:elif="{{error}}" class="feed-state">
+        <text>加载失败</text>
+        <view class="feed-action" bindtap="retryFeed" role="button" aria-label="点击重试">点击重试</view>
+      </view>
+      <view wx:elif="{{!list.length}}" class="feed-state">
+        <text>还没有关注的人发布作品</text>
+        <view class="feed-action" bindtap="goHome" role="button" aria-label="去首页看看">去首页看看</view>
+      </view>
+      <view wx:elif="{{noMore}}" class="feed-state feed-end">没有更多了</view>
+    </view>
+  </scroll-view>
+</view>

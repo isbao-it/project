@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PhotoAI Hub · 布局预览（B站式）</title>
+<style>
+  /* 独立页面（非内嵌控件），因此自己接管背景与字体 */
+  :root{
+    --pink:#FB7299; --pink-soft:#FFE8EF; --blue:#00AEEC;
+    --ink:#18191C; --ink-2:#61666D; --ink-3:#9499A0;
+    --bg:#F6F7F8; --card:#fff; --line:#EDEFF2;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;padding:24px;background:#EFF1F3;
+       font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink)}
+  .wrap{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .cap{font-size:12px;color:#7A8087;padding-left:4px}
+
+  /* 手机外框 */
+  .phone{width:375px;height:740px;background:var(--bg);border-radius:34px;overflow:hidden;
+         box-shadow:0 12px 32px rgba(0,0,0,.14);position:relative;border:8px solid #1D1F23}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+  .statusbar{height:34px;display:flex;justify-content:space-between;align-items:center;
+             padding:0 18px;font-size:12px;font-weight:600;color:var(--ink)}
+  .scroll{flex:1;overflow:hidden}
+
+  /* 首页头部 */
+  .home-head{padding:4px 14px 10px;display:flex;align-items:center;gap:10px;background:#fff}
+  .logo{font-weight:800;font-size:17px;color:var(--pink);letter-spacing:.5px}
+  .search{flex:1;height:30px;border-radius:15px;background:var(--bg);display:flex;align-items:center;
+          gap:6px;padding:0 12px;color:var(--ink-3);font-size:12px}
+  .ava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#FFB3C7,#FB7299);flex:none}
+
+  /* 分类横滑 */
+  .chips{display:flex;gap:8px;padding:8px 14px;background:#fff;overflow:hidden}
+  .chip{font-size:13px;color:var(--ink-2);padding:4px 2px;white-space:nowrap}
+  .chip.on{color:var(--pink);font-weight:700;position:relative}
+  .chip.on:after{content:"";position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+                 width:16px;height:3px;border-radius:2px;background:var(--pink)}
+
+  /* 瀑布流 */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 10px 78px}
+  .card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .cover{width:100%;position:relative}
+  .cover .tag{position:absolute;left:6px;top:6px;font-size:10px;color:#fff;background:rgba(0,0,0,.42);
+              padding:1px 5px;border-radius:4px}
+  .cover .cnt{position:absolute;right:6px;bottom:6px;font-size:10px;color:#fff;background:rgba(0,0,0,.42);
+              padding:1px 5px;border-radius:4px}
+  .title{font-size:12.5px;line-height:1.35;padding:6px 7px 2px;height:38px;overflow:hidden}
+  .meta{display:flex;align-items:center;gap:5px;padding:0 7px 7px;color:var(--ink-3);font-size:10.5px}
+  .meta .dot{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#DDE3EA,#B9C2CC)}
+
+  /* 底部 tabBar */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:54px;background:#fff;border-top:1px solid var(--line);
+          display:flex;align-items:center;justify-content:space-around;font-size:10px;color:var(--ink-3)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:2px;width:56px}
+  .tab .ico{font-size:17px;line-height:1}
+  .tab.on{color:var(--pink);font-weight:700}
+  .tab.pub .ico{width:40px;height:28px;border-radius:8px;background:var(--pink);color:#fff;
+                display:flex;align-items:center;justify-content:center;font-size:18px}
+
+  /* 详情 */
+  .detail-hero{height:250px;background:linear-gradient(160deg,#2B3A55,#6E8CA8 55%,#C9D6DF)}
+  .detail-body{background:#fff;padding:12px 14px}
+  .d-title{font-size:16px;font-weight:700;line-height:1.35}
+  .d-sub{color:var(--ink-3);font-size:11.5px;margin-top:5px}
+  .author{display:flex;align-items:center;gap:9px;margin-top:12px}
+  .author .ava{width:34px;height:34px}
+  .a-name{font-size:13px;font-weight:600}
+  .a-desc{font-size:10.5px;color:var(--ink-3)}
+  .follow{margin-left:auto;background:var(--pink);color:#fff;font-size:12px;padding:6px 14px;border-radius:14px}
+  .dm{margin-left:8px;background:var(--pink-soft);color:var(--pink);font-size:12px;padding:6px 12px;border-radius:14px}
+  .actions{display:flex;gap:26px;padding:14px 2px 6px;border-bottom:1px solid var(--line)}
+  .act{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--ink-2)}
+  .act .ico{font-size:19px}
+  .act.liked{color:var(--pink)}
+  .cmt{padding:12px 14px;background:#fff}
+  .cmt h4{margin:0 0 10px;font-size:13px}
+  .c-item{display:flex;gap:8px;margin-bottom:12px}
+  .c-item .ava{width:26px;height:26px;flex:none}
+  .c-name{font-size:11.5px;color:var(--ink-2)}
+  .c-text{font-size:12.5px;line-height:1.5;margin-top:2px}
+  .c-foot{font-size:10.5px;color:var(--ink-3);margin-top:3px}
+
+  /* 发布 */
+  .pub{padding:14px;background:var(--bg)}
+  .pub h3{margin:0 0 12px;font-size:15px}
+  .upload{height:150px;border:1.5px dashed #D6DAE0;border-radius:12px;background:#fff;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink-3);font-size:12px}
+  .upload .plus{font-size:30px;color:#C7CCD3}
+  .field{background:#fff;border-radius:10px;padding:12px;margin-top:10px}
+  .field .lab{font-size:11px;color:var(--ink-3);margin-bottom:6px}
+  .field input,.field textarea{width:100%;border:0;outline:0;font-size:13.5px;font-family:inherit;resize:none}
+  .rowline{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:10px 2px}
+  .submit{margin-top:14px;height:44px;border-radius:22px;background:var(--pink);color:#fff;
+          display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+  .hint{margin-top:8px;font-size:11px;color:var(--ink-3);text-align:center}
+
+  /* 消息 */
+  .msg-head{padding:10px 14px 8px;background:#fff;font-size:16px;font-weight:700}
+  .conv{display:flex;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--line);position:relative}
+  .conv .ava{width:42px;height:42px}
+  .c-main{flex:1;min-width:0}
+  .c-top{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+  .c-time{font-size:10.5px;color:var(--ink-3);font-weight:400}
+  .c-last{font-size:12px;color:var(--ink-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{position:absolute;left:44px;top:8px;min-width:16px;height:16px;border-radius:8px;background:var(--pink);
+         color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+  /* 我的 */
+  .me-hero{height:120px;background:linear-gradient(135deg,#FB7299,#FF9EB5 60%,#FFD1DC)}
+  .me-card{margin:-34px 14px 0;background:#fff;border-radius:12px;padding:14px;position:relative}
+  .me-top{display:flex;align-items:center;gap:10px}
+  .me-top .ava{width:52px;height:52px;border:3px solid #fff;margin-top:-34px}
+  .me-name{font-size:15px;font-weight:700}
+  .me-id{font-size:11px;color:var(--ink-3)}
+  .stats{display:flex;gap:26px;margin-top:12px;font-size:12px;color:var(--ink-2)}
+  .stats b{font-size:15px;color:var(--ink);margin-right:3px}
+  .me-list{margin:10px 14px;background:#fff;border-radius:12px;overflow:hidden}
+  .me-item{display:flex;align-items:center;justify-content:space-between;padding:14px;font-size:13.5px;border-bottom:1px solid var(--line)}
+  .me-item:last-child{border:0}
+  .me-item span{color:var(--ink-3);font-size:12px}
+
+  /* 后台审核（PC） */
+  .desk{width:900px;height:560px;background:#fff;border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.12);overflow:hidden;display:flex}
+  .side{width:170px;background:#1F2430;color:#C9CFDA;font-size:13px}
+  .side .brand{height:52px;display:flex;align-items:center;padding:0 16px;font-weight:700;color:#fff}
+  .side a{display:block;padding:11px 16px;color:#C9CFDA;text-decoration:none;font-size:12.5px}
+  .side a.on{background:rgba(251,114,153,.16);color:#FB7299;border-right:3px solid #FB7299}
+  .main{flex:1;padding:16px 18px}
+  .m-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .m-head h3{margin:0;font-size:15px}
+  .tabs2{display:flex;gap:16px;font-size:12.5px;color:#61666D;margin-bottom:10px}
+  .tabs2 b{color:#FB7299}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #EEF0F3}
+  th{color:#9499A0;font-weight:500;font-size:11.5px}
+  .thumb{width:46px;height:34px;border-radius:4px;background:linear-gradient(135deg,#8AA4B8,#C9D6DF)}
+  .btn{font-size:11.5px;padding:4px 10px;border-radius:12px;border:0;margin-right:6px}
+  .ok{background:#E8F8EF;color:#1AA260}
+  .no{background:#FFE8EF;color:#FB7299}
+  .legend{font-size:12px;color:#7A8087;max-width:900px;line-height:1.7;margin:0 0 6px}
+</style>
+</head>
+<body>
+<p class="legend">
+  <b>PhotoAI Hub · 布局预览</b>（B站手机版式：底部 4 栏 tab + 双列瀑布流 + 详情页三连/评论 + 关注流）。<br>
+  数据全是假的，只用于确认<b>布局与信息层级</b>；点「首页」里的第一张卡片可看详情交互。
+</p>
+
+<div class="wrap" id="wrap">
+
+  <!-- ① 首页 · 画廊 -->
+  <div class="col">
+    <div class="phone" data-screen="home">
+      <div class="screen">
+        <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+        <div class="home-head">
+          <div class="logo">PhotoAI</div>
+          <div class="search">🔍 搜索作品 / 摄影师</div>
+          <div class="ava"></div>
+        </div>
+        <div class="chips" style="border-bottom:1px solid var(--line);padding-bottom:0">
+          <div class="chip on" style="font-size:14px">推荐</div><div class="chip" style="font-size:14px">最新</div><div class="chip" style="font-size:14px">热门</div>
+        </div>
+        <div class="chips" style="padding-top:6px;padding-bottom:6px">
+          <div class="chip" style="font-size:12px">全部</div><div class="chip" style="font-size:12px">风光</div><div class="chip" style="font-size:12px">人像</div>
+          <div class="chip" style="font-size:12px">街拍</div><div class="chip" style="font-size:12px">黑白</div><div class="chip" style="font-size:12px">夜景</div>
+        </div>
+        <div class="scroll">
+          <div class="grid">
+            <div class="card" onclick="openDetail()">
+              <div class="cover" style="height:190px;background:linear-gradient(160deg,#2B3A55,#6E8CA8 60%,#C9D6DF)">
+                <span class="tag">风光</span><span class="cnt">♡ 128</span></div>
+              <div class="title">洱海清晨，等一场没有被云挡住的日出</div>
+              <div class="meta"><span class="dot"></span><span>阿野</span></div>
+            </div>
+            <div class="card">
+              <div class="cover" style="height:150px;background:linear-gradient(200deg,#FFD1A9,#E98F62 55%,#7A3E2B)">
+                <span class="tag">街拍</span><span class="cnt">♡ 96</span></div>
+              <div class="title">黄昏六点半，菜市场门口的光</div>
+              <div class="meta"><span class="dot"></span><span>老K</span></div>
+            </div>
+            <div class="card">
+              <div class="cover" style="height:170px;background:linear-gradient(140deg,#1B2A41,#3E5C76 50%,#8CA3B8)">
+                <span class="tag">夜景</span><span class="cnt">♡ 214</span></div>
+              <div class="title">城市入睡前，最后一批亮着的窗</div>
+              <div class="meta"><span class="dot"></span><span>Lin</span></div>
+            </div>
+            <div class="card">
+              <div class="cover" style="height:140px;background:linear-gradient(180deg,#F3E9DC,#D9BFA6 60%,#9C7B62)">
+                <span class="tag">人像</span><span class="cnt">♡ 73</span></div>
+              <div class="title">窗边的侧脸，自然光足够</div>
+              <div class="meta"><span class="dot"></span><span>小满</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><span class="ico">🏠</span>首页</div>
+          <div class="tab"><span class="ico">❤</span>关注</div>
+          <div class="tab pub"><span class="ico">＋</span></div>
+          <div class="tab"><span class="ico">👤</span>我的</div>
+        </div>
+        <!-- 详情覆盖层（点卡片出现） -->
+        <div class="screen" id="detailLayer" style="display:none;background:var(--bg)">
+          <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+          <div class="scroll">
+            <div class="detail-hero"></div>
+            <div class="detail-body">
+              <div class="d-title">洱海清晨，等一场没有被云挡住的日出</div>
+              <div class="d-sub">风光 · 2026-10-12 · 大理</div>
+              <div class="author">
+                <div class="ava"></div>
+                <div><div class="a-name">阿野</div><div class="a-desc">拍摄 128 组 · 粉丝 1.2k</div></div>
+                <div class="follow">关注</div><div class="dm">私信</div>
+              </div>
+              <div class="actions">
+                <div class="act liked" id="likeBtn" onclick="toggleLike()"><span class="ico">♥</span>128</div>
+                <div class="act"><span class="ico">☆</span>收藏</div>
+                <div class="act"><span class="ico">💬</span>12</div>
+                <div class="act"><span class="ico">↗</span>分享</div>
+              </div>
+              <div class="rowline" style="border-top:1px solid var(--line);margin-top:10px">
+                <span>📷 同款机位 · 参数相近的作品</span><span>›</span></div>
+            </div>
+            <div class="cmt">
+              <h4>评论 12</h4>
+              <div class="c-item"><div class="ava"></div><div>
+                <div class="c-name">小满</div><div class="c-text">这个色温太舒服了，请问后期用了什么预设？</div>
+                <div class="c-foot">2 小时前 · ♡ 6</div></div></div>
+              <div class="c-item"><div class="ava"></div><div>
+                <div class="c-name">老K</div><div class="c-text">同问，天空没有过曝，压得很稳。</div>
+                <div class="c-foot">1 小时前 · ♡ 2</div></div></div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="tab" onclick="closeDetail()"><span class="ico">←</span>返回</div>
+            <div class="tab"><span class="ico">💬</span>评论</div><div class="tab"><span class="ico">☆</span>收藏</div>
+            <div class="tab"><span class="ico">↗</span>分享</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">① 首页 · 双列瀑布流（点第一张 → 详情）</div>
+  </div>
+
+  <!-- ② 详情 -->
+  <div class="col">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+        <div class="detail-hero"></div>
+        <div class="scroll">
+          <div class="detail-body">
+            <div class="d-title">洱海清晨，等一场没有被云挡住的日出</div>
+            <div class="d-sub">风光 · 2026-10-12 · 大理 · f/8 1/250s ISO100</div>
+            <div class="author">
+              <div class="ava"></div>
+              <div><div class="a-name">阿野</div><div class="a-desc">拍摄 128 组 · 粉丝 1.2k</div></div>
+              <div class="follow">关注</div><div class="dm">私信</div>
+            </div>
+            <div class="actions">
+              <div class="act liked"><span class="ico">♥</span>128</div>
+              <div class="act"><span class="ico">☆</span>32</div>
+              <div class="act"><span class="ico">💬</span>12</div>
+              <div class="act"><span class="ico">↗</span>分享</div>
+            </div>
+          </div>
+          <div class="cmt">
+            <h4>评论 12</h4>
+            <div class="c-item"><div class="ava"></div><div>
+              <div class="c-name">小满</div><div class="c-text">这个色温太舒服了，请问后期用了什么预设？</div>
+              <div class="c-foot">2 小时前 · ♡ 6</div></div></div>
+            <div class="c-item"><div class="ava"></div><div>
+              <div class="c-name">老K</div><div class="c-text">同问，天空没有过曝，压得很稳。</div>
+              <div class="c-foot">1 小时前 · ♡ 2</div></div></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><span class="ico">♥</span>点赞</div>
+          <div class="tab"><span class="ico">☆</span>收藏</div>
+          <div class="tab"><span class="ico">💬</span>评论</div>
+          <div class="tab"><span class="ico">↗</span>分享</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">② 作品详情（含拍摄参数、关注/私信）</div>
+  </div>
+
+  <!-- ③ 发布 -->
+  <div class="col">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+        <div class="scroll">
+          <div class="pub">
+            <h3>发布作品</h3>
+            <div class="upload"><div class="plus">＋</div><span>选择图片（自动去除位置信息）</span></div>
+            <div class="field"><div class="lab">标题</div><input value="洱海清晨，等一场没有被云挡住的日出"></div>
+            <div class="field"><div class="lab">描述</div><textarea rows="3">凌晨五点到的机位，等了四十分钟云才散开。</textarea></div>
+            <div class="field"><div class="lab">分类</div>
+              <div class="chips" style="padding:0">
+                <div class="chip on">风光</div><div class="chip">人像</div><div class="chip">街拍</div><div class="chip">夜景</div>
+              </div>
+            </div>
+            <div class="rowline"><span>拍摄参数（自动读取 EXIF）</span><span>f/8 · 1/250s · ISO100 ›</span></div>
+            <div class="submit">提交审核</div>
+            <div class="hint">提交后进入「待审核」，通过后才会出现在首页</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="ico">🏠</span>首页</div>
+          <div class="tab"><span class="ico">❤</span>关注</div>
+          <div class="tab pub on"><span class="ico">＋</span></div>
+          <div class="tab"><span class="ico">👤</span>我的</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">③ 发布（EXIF 自动读取 + 待审核提示）</div>
+  </div>
+
+  <!-- ④ 消息 -->
+  <div class="col">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+        <div class="msg-head">关注</div>
+        <div class="scroll">
+          <div class="conv"><div class="ava"></div>
+            <div class="c-main"><div class="c-top"><span>阿野</span><span class="c-time">10:12</span></div>
+              <div class="c-last">发布了《洱海清晨，等一场没有被云挡住的日出》</div></div></div>
+          <div class="conv"><div class="ava"></div>
+            <div class="c-main"><div class="c-top"><span>小满</span><span class="c-time">昨天</span></div>
+              <div class="c-last">发布了《窗边的侧脸，自然光足够》</div></div></div>
+          <div class="conv"><div class="ava"></div>
+            <div class="c-main"><div class="c-top"><span>老K</span><span class="c-time">周二</span></div>
+              <div class="c-last">发布了《黄昏六点半，菜市场门口的光》</div></div></div>
+          <div style="padding:14px;font-size:11.5px;color:var(--ink-3);text-align:center">只看已关注的人 · 私信本期暂缓</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="ico">🏠</span>首页</div><div class="tab"><span class="ico">❤</span>关注</div>
+          <div class="tab pub"><span class="ico">＋</span></div>
+          <div class="tab on"><span class="ico">❤</span>关注</div>
+          <div class="tab"><span class="ico">👤</span>我的</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">④ 私信会话（未读红点）</div>
+  </div>
+
+  <!-- ⑤ 我的 -->
+  <div class="col">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span>10:24</span><span>●●●● 5G ▮</span></div>
+        <div class="scroll">
+          <div class="me-hero"></div>
+          <div class="me-card">
+            <div class="me-top"><div class="ava"></div>
+              <div><div class="me-name">阿野</div><div class="me-id">ID 10086 · 摄影爱好者</div></div></div>
+            <div class="stats"><div><b>28</b>作品</div><div><b>46</b>收藏</div><div><b>1.2k</b>获赞</div></div>
+          </div>
+          <div class="me-list">
+            <div class="me-item">我的作品 <span>28 ›</span></div>
+            <div class="me-item">我的收藏 <span>46 ›</span></div>
+            <div class="me-item">我赞过的 <span>›</span></div>
+            <div class="me-item">账号与设置 <span>›</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="ico">🏠</span>首页</div><div class="tab"><span class="ico">❤</span>关注</div>
+          <div class="tab pub"><span class="ico">＋</span></div>
+          <div class="tab on"><span class="ico">👤</span>我的</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">⑤ 我的（作品 / 收藏 / 设置）</div>
+  </div>
+
+</div>
+
+<!-- ⑥ 后台审核 -->
+<div style="margin-top:26px">
+  <div class="cap" style="margin-bottom:8px">⑥ 后台审核页（PC · 复用 layuimini 风格）</div>
+  <div class="desk">
+    <div class="side">
+      <div class="brand">PhotoAI 后台</div>
+      <a href="#">数据概览</a><a class="on" href="#">作品审核</a>
+      <a href="#">作品管理</a><a href="#">用户管理</a><a href="#">评论管理</a><a href="#">系统日志</a>
+    </div>
+    <div class="main">
+      <div class="m-head"><h3>作品审核</h3><span style="font-size:12px;color:#9499A0">管理员 admin</span></div>
+      <div class="tabs2"><b>待审核 3</b><span>已通过 128</span><span>已驳回 4</span></div>
+      <table>
+        <tr><th>封面</th><th>标题</th><th>作者</th><th>提交时间</th><th>自动审核</th><th>操作</th></tr>
+        <tr><td><div class="thumb"></div></td><td>洱海清晨，等一场没有被云挡住的日出</td><td>阿野</td><td>10-18 10:12</td><td>文本通过</td>
+            <td><button class="btn ok">通过</button><button class="btn no">驳回</button></td></tr>
+        <tr><td><div class="thumb" style="background:linear-gradient(135deg,#E98F62,#7A3E2B)"></div></td><td>黄昏六点半，菜市场门口的光</td><td>老K</td><td>10-18 09:40</td><td>文本通过</td>
+            <td><button class="btn ok">通过</button><button class="btn no">驳回</button></td></tr>
+        <tr><td><div class="thumb" style="background:linear-gradient(135deg,#3E5C76,#8CA3B8)"></div></td><td>城市入睡前，最后一批亮着的窗</td><td>Lin</td><td>10-17 22:05</td><td>待人工</td>
+            <td><button class="btn ok">通过</button><button class="btn no">驳回</button></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 首页卡片 → 详情覆盖层（只在这一屏做交互，其余是静态稿）
+  function openDetail(){
+    document.getElementById('detailLayer').style.display='flex';
+    document.getElementById('detailLayer').style.flexDirection='column';
+  }
+  function closeDetail(){ document.getElementById('detailLayer').style.display='none'; }
+  function toggleLike(){
+    var b=document.getElementById('likeBtn');
+    var liked=b.classList.toggle('liked');
+    b.innerHTML = '<span class="ico">'+(liked?'♥':'♡')+'</span>'+(liked?129:128);
+  }
+</script>
+</body>
+</html>

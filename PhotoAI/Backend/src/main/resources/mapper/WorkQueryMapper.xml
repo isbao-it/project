@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.WorkQueryMapper">
+    <resultMap id="Work" type="java.util.LinkedHashMap">
+        <id column="pid" property="pid" javaType="java.lang.String"/>
+        <result column="uid" property="uid" javaType="java.lang.String"/>
+        <result column="wtitle" property="wtitle" javaType="java.lang.String"/>
+        <result column="wdesc" property="wdesc" javaType="java.lang.String"/>
+        <result column="vurl" property="vurl" javaType="java.lang.String"/>
+        <result column="viewcount" property="viewcount" javaType="java.lang.Long"/>
+        <result column="votecount" property="votecount" javaType="java.lang.Long"/>
+        <result column="wstatus" property="wstatus" javaType="java.lang.String"/>
+        <result column="cwtime" property="cwtime" javaType="java.lang.String"/>
+        <result column="likep" property="likep" javaType="java.lang.Long"/>
+        <result column="uname" property="uname" javaType="java.lang.String"/>
+        <result column="avatar" property="avatar" javaType="java.lang.String"/>
+        <result column="pcid" property="pcid" javaType="java.lang.String"/>
+        <result column="pcname" property="pcname" javaType="java.lang.String"/>
+        <result column="realLikeCount" property="realLikeCount" javaType="java.lang.Long"/>
+        <result column="favoriteCount" property="favoriteCount" javaType="java.lang.Long"/>
+    </resultMap>
+    <sql id="Columns">
+        p.pid,p.uid,p.wtitle,COALESCE(p.wdesc,'') AS wdesc,p.vurl,
+        COALESCE(p.viewcount,0) AS viewcount,COALESCE(p.votecount,0) AS votecount,p.wstatus,
+        DATE_FORMAT(p.cwtime,'%Y-%m-%dT%H:%i:%s+08:00') AS cwtime,
+        COALESCE(p.likep,0) AS likep,u.uname,u.avatar,p.pcid,c.pcname,
+        (SELECT COUNT(*) FROM liketable l WHERE l.targetid=p.pid AND l.targettype='帖子') AS realLikeCount,
+        (SELECT COUNT(*) FROM favorite fa WHERE fa.pid = p.pid) AS favoriteCount
+    </sql>
+    <sql id="Filter">
+        <choose>
+            <when test="uid != null">
+                p.uid=#{uid} AND p.wstatus IN ('展示','待审核','隐藏','已驳回')
+                <if test="status != null">AND p.wstatus=#{status}</if>
+            </when>
+            <otherwise>p.wstatus='展示'</otherwise>
+        </choose>
+        <if test="category != null">AND p.pcid=#{category}</if>
+    </sql>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork p WHERE <include refid="Filter"/>
+    </select>
+    <select id="page" resultMap="Work">
+        <choose>
+            <when test="tab == 'recommend' and viewerUid == null">
+                <!-- 分类内先按热度排名，再跨分类轮转；NULL 分类也保留为独立分组。 -->
+                SELECT ranked.* FROM (
+                    SELECT <include refid="Columns"/>,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY p.pcid
+                               ORDER BY (COALESCE(p.likep,0)*2 + COALESCE(p.votecount,0)*5 + COALESCE(p.viewcount,0)/10.0)
+                                        / SQRT(TIMESTAMPDIFF(HOUR, p.cwtime, NOW()) + 1) DESC, p.pid ASC
+                           ) AS rn
+                    FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+                    WHERE <include refid="Filter"/>
+                ) ranked
+                ORDER BY ranked.rn ASC, ranked.pcid ASC
+            </when>
+            <otherwise>
+        SELECT <include refid="Columns"/>
+        <if test="uid != null">
+            ,(SELECT CASE WHEN a.act='reject' THEN a.reason ELSE NULL END
+              FROM waudit a WHERE a.pid=p.pid ORDER BY a.ct DESC,a.aid DESC LIMIT 1) AS reason
+        </if>
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        <if test="tab == 'recommend' and viewerUid != null">
+            LEFT JOIN (
+                <!-- 同类赞藏先求和，再对分类合计求总数，兼容 ONLY_FULL_GROUP_BY。 -->
+                SELECT pcid, SUM(c) AS c, SUM(SUM(c)) OVER () AS total
+                FROM (
+                    SELECT p2.pcid AS pcid, COUNT(*) AS c
+                    FROM liketable l2 JOIN pwork p2 ON p2.pid = l2.targetid
+                    WHERE l2.uid = #{viewerUid} AND l2.targettype = '帖子'
+                    GROUP BY p2.pcid
+                    UNION ALL
+                    SELECT p2.pcid AS pcid, COUNT(*) AS c
+                    FROM favorite f2 JOIN pwork p2 ON p2.pid = f2.pid
+                    WHERE f2.uid = #{viewerUid}
+                    GROUP BY p2.pcid
+                ) parts
+                GROUP BY pcid
+            ) uf ON uf.pcid = p.pcid
+        </if>
+        WHERE <include refid="Filter"/>
+        <choose>
+            <!-- B9 分类偏好系数为 2；缺少该类偏好或零互动时权重回到 1。 -->
+            <when test="tab == 'recommend'">
+                ORDER BY ((COALESCE(p.likep,0)*2 + COALESCE(p.votecount,0)*5 + COALESCE(p.viewcount,0)/10.0)
+                          / SQRT(TIMESTAMPDIFF(HOUR, p.cwtime, NOW()) + 1))
+                         * (1 + COALESCE(2 * COALESCE(uf.c, 0) / NULLIF(uf.total, 0), 0)) DESC, p.pid ASC
+            </when>
+            <when test="tab == 'hot'">ORDER BY (COALESCE(p.likep,0)+COALESCE(p.votecount,0)) DESC,p.pid ASC</when>
+            <otherwise>ORDER BY p.cwtime DESC,p.pid ASC</otherwise>
+        </choose>
+            </otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="displayed" resultMap="Work">
+        SELECT <include refid="Columns"/>
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE p.pid=#{pid} AND (p.wstatus='展示' OR p.uid=#{viewerUid})
+    </select>
+    <update id="incrementView">
+        UPDATE pwork SET viewcount=COALESCE(viewcount,0)+1
+        WHERE pid=#{pid} AND (wstatus='展示' OR uid=#{viewerUid})
+    </update>
+    <select id="securityIdentity" resultType="java.lang.String">
+        SELECT openid FROM user WHERE uid=#{uid}
+    </select>
+</mapper>

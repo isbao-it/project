@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.FollowMapper">
+    <select id="userExists" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user WHERE uid=#{tuid})
+    </select>
+    <insert id="insert">
+        INSERT INTO follow (fid,uid,tuid,ct) VALUES (#{fid},#{uid},#{tuid},#{ct})
+    </insert>
+    <delete id="delete">
+        DELETE FROM follow WHERE uid=#{uid} AND tuid=#{tuid}
+    </delete>
+    <delete id="removeFollower">
+        DELETE FROM follow WHERE uid=#{followerUid} AND tuid=#{ownerUid}
+    </delete>
+    <select id="ownedCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM follow WHERE uid=#{uid} AND tuid=#{tuid}
+    </select>
+    <select id="followersCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM follow WHERE tuid=#{tuid}
+    </select>
+    <sql id="Relation">
+        FROM follow f INNER JOIN user u ON u.uid=
+        <choose>
+            <when test="followers">f.uid WHERE f.tuid=#{uid}</when>
+            <otherwise>f.tuid WHERE f.uid=#{uid}</otherwise>
+        </choose>
+    </sql>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) <include refid="Relation"/>
+    </select>
+    <sql id="FollowUserColumns">
+        u.uid,u.uname AS nickname,u.avatar,u.bio
+    </sql>
+    <select id="page" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="FollowUserColumns"/>
+        <include refid="Relation"/>
+        ORDER BY f.ct DESC,f.fid ASC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="homeCount" resultType="java.lang.Long">
+        SELECT COUNT(*) <include refid="Relation"/>
+    </select>
+    <select id="homePage" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="FollowUserColumns"/>
+        <include refid="Relation"/>
+        ORDER BY f.ct DESC,f.fid ASC LIMIT #{size} OFFSET #{offset}
+    </select>
+</mapper>

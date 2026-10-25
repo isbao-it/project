@@ -1,0 +1,225 @@
+/* app.wxss - 全局样式 */
+/* 定义页面基础样式和全局可复用的工具类 */
+
+/* ===== 页面基础 ===== */
+page {
+  --pink: #FF6B35;
+  --pink-soft: #FFF0EA;
+  --blue: #FFB020;
+  --ink: #1A1410;
+  --ink-2: #5C534D;
+  --ink-3: #9A8F88;
+  --bg: #FAF8F7;
+  --card: #FFFFFF;
+  --line: #EDE8E5;
+  background-color: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ===== 布局工具类 ===== */
+
+/* 通用内边距容器 */
+.container {
+  padding: 16rpx 24rpx;
+}
+
+/* 卡片容器：白色背景、圆角、底部阴影 */
+.card {
+  background-color: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 水平弹性布局（居中） */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* 两端对齐布局 */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 垂直弹性布局 */
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 文字工具类 ===== */
+
+/* 主题色 */
+.text-primary {
+  color: var(--pink);
+}
+
+/* 灰色次要文字 */
+.text-muted {
+  color: #9ca3af;
+  font-size: 24rpx;
+}
+
+/* 小号文字 */
+.text-small {
+  font-size: 26rpx;
+}
+
+/* 加粗 */
+.text-bold {
+  font-weight: 600;
+}
+
+/* ===== 间距工具类 ===== */
+.mt-2 {
+  margin-top: 16rpx;
+}
+
+.mb-2 {
+  margin-bottom: 16rpx;
+}
+
+/* ===== 按钮工具类 ===== */
+
+/* 主按钮：主题背景、圆角胶囊形 */
+.btn-primary {
+  background-color: var(--pink);
+  color: white;
+  border-radius: 48rpx;
+  font-size: 28rpx;
+  padding: 0 32rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+}
+
+/* 描边按钮：透明背景、灰色边框 */
+.btn-outline {
+  background-color: transparent;
+  border: 2rpx solid #e5e7eb;
+  color: #374151;
+  border-radius: 48rpx;
+  font-size: 28rpx;
+  padding: 0 24rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+}
+
+/* ===== 组件工具类 ===== */
+
+/* 头像（小）：圆形、固定尺寸、灰色占位背景 */
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+/* 通用标签（小徽章） */
+.tag {
+  padding: 4rpx 16rpx;
+  border-radius: 32rpx;
+  font-size: 22rpx;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* 激活/正常状态标签（绿色） */
+.tag-active {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+/* 禁用状态标签（红色） */
+.tag-disabled {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* ===== 暖橙设计系统：供后续页面复用，旧工具类保留 ===== */
+.pa-btn-primary {
+  background: var(--pink);
+  color: #FFFFFF;
+  border-radius: 44rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  border: 0;
+}
+
+/* 微信原生 button 的边框由伪元素绘制，需一并去除。 */
+.pa-btn-primary::after {
+  border: 0;
+}
+
+.pa-btn-ghost {
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  color: var(--ink-2);
+}
+
+.pa-chips {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 28rpx;
+  background: var(--card);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.pa-chip {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  padding: 8rpx 4rpx;
+  white-space: nowrap;
+}
+
+.pa-chip.on {
+  position: relative;
+  color: var(--pink);
+  font-weight: 700;
+}
+
+.pa-chip.on::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4rpx;
+  transform: translateX(-50%);
+  width: 32rpx;
+  height: 6rpx;
+  border-radius: 4rpx;
+  background: var(--pink);
+}
+
+.pa-card {
+  background: var(--card);
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, .05);
+}
+
+.pa-ava {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pink-soft), var(--pink));
+  flex: none;
+}
+
+.pa-tag {
+  position: absolute;
+  font-size: 20rpx;
+  color: #FFFFFF;
+  background: rgba(0, 0, 0, .42);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+}
+
+.pa-line {
+  border-bottom: 1rpx solid var(--line);
+}

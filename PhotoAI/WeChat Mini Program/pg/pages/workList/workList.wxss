@@ -1,0 +1,26 @@
+.publish-container { padding-bottom: calc(150rpx + env(safe-area-inset-bottom)); }
+.section-title { display: block; font-size: 34rpx; color: #1f2937; font-weight: 600; margin-bottom: 12rpx; }
+.tip-text { display: block; font-size: 26rpx; color: #6b7280; line-height: 1.7; }
+.work-preview { display: block; width: 100%; height: 420rpx; background: #f3f4f6; border-radius: 16rpx; margin: 24rpx 0; }
+.image-placeholder { padding: 80rpx 20rpx; margin: 24rpx 0; text-align: center; background: #f9fafb; border: 2rpx dashed #d1d5db; border-radius: 16rpx; color: #6b7280; font-size: 28rpx; }
+.choose-btn { margin-top: 24rpx; }
+.upload-success { display: block; color: #15803d; font-size: 26rpx; margin-top: 16rpx; }
+.exif-section { border-top: 2rpx solid #e5e7eb; margin-top: 28rpx; padding-top: 24rpx; }
+.exif-grid { display: flex; flex-wrap: wrap; margin-top: 16rpx; }
+.exif-item { width: 50%; box-sizing: border-box; padding: 12rpx 16rpx 12rpx 0; }
+.exif-label { display: block; font-size: 24rpx; color: #6b7280; margin-bottom: 6rpx; }
+.exif-value { display: block; font-size: 28rpx; color: #374151; line-height: 1.6; overflow-wrap: anywhere; word-break: break-all; }
+.form-item { margin-bottom: 32rpx; }
+.label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.label { display: block; font-size: 28rpx; margin-bottom: 12rpx; color: #374151; }
+.counter { font-size: 24rpx; color: #6b7280; flex-shrink: 0; }
+.input { background: #f9fafb; border-radius: 16rpx; padding: 0 24rpx; font-size: 30rpx; border: 2rpx solid #e5e7eb; width: 100%; box-sizing: border-box; height: 80rpx; line-height: 80rpx; color: #374151; }
+.desc-input { height: 240rpx; line-height: 1.6; padding: 20rpx 24rpx; }
+.category-picker { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.picker-placeholder { color: #6b7280; }
+.error-text { display: block; font-size: 26rpx; color: #b91c1c; line-height: 1.7; margin-top: 12rpx; overflow-wrap: anywhere; }
+.label-row .error-text { font-size: 24rpx; margin-top: 0; }
+.retry-btn { margin-top: 20rpx; }
+.publish-btn { margin-top: 32rpx; }
+.publish-btn[disabled] { background: #93c5fd; color: #fff; }
+.choose-btn[disabled], .retry-btn[disabled] { background: #f3f4f6; color: #6b7280; }

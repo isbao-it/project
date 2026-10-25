@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.SimilarMapper">
+    <select id="source" resultType="java.util.LinkedHashMap">
+        SELECT p.pid,p.pcid,e.focal,e.aperture
+        FROM pwork p LEFT JOIN work_exif e ON e.pid=p.pid
+        WHERE p.pid=#{pid} AND p.wstatus='展示'
+    </select>
+    <!-- CASE 保证优化器调整条件顺序时，也不会对候选的零或负光圈求 LOG2。 -->
+    <select id="matches" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM pwork p JOIN work_exif e ON e.pid=p.pid
+        LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE p.wstatus='展示' AND p.pcid=#{pcid} AND p.pid != #{pid}
+          AND e.focal > 0 AND e.aperture > 0
+          AND ABS(LOG2(CASE WHEN e.aperture > 0 THEN e.aperture END)-LOG2(#{aperture})) &lt;= #{apertureStopsMax}
+          AND ABS(e.focal-#{focal})/#{focal} &lt;= #{focalRelativeMax}
+        ORDER BY p.likep DESC,p.pid ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

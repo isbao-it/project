@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.LikeMapper">
+    <select id="pageByUser" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM liketable l
+        JOIN pwork p ON p.pid = l.targetid AND p.wstatus = '展示'
+        LEFT JOIN user u ON u.uid = p.uid
+        LEFT JOIN pclist c ON c.pcid = p.pcid
+        WHERE l.uid = #{uid} AND l.targettype = '帖子'
+        ORDER BY l.likect DESC, l.lid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM liketable l
+        JOIN pwork p ON p.pid = l.targetid AND p.wstatus = '展示'
+        WHERE l.uid = #{uid} AND l.targettype = '帖子'
+    </select>
+
+    <select id="displayed" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pwork WHERE pid=#{pid} AND wstatus='展示')
+    </select>
+    <insert id="insert">
+        INSERT INTO liketable (lid,uid,targetid,targettype) VALUES (#{lid},#{uid},#{targetid},#{targettype})
+    </insert>
+    <delete id="delete">
+        DELETE FROM liketable WHERE uid=#{uid} AND targetid=#{pid} AND targettype='帖子'
+    </delete>
+    <select id="ownedCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM liketable WHERE uid=#{uid} AND targetid=#{pid} AND targettype='帖子'
+    </select>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM liketable WHERE targetid=#{pid} AND targettype='帖子'
+    </select>
+    <update id="increment">
+        UPDATE pwork SET likep=likep+1 WHERE pid=#{pid} AND wstatus='展示'
+    </update>
+    <update id="decrement">
+        UPDATE pwork SET likep=GREATEST(likep,1)-1 WHERE pid=#{pid} AND wstatus='展示'
+    </update>
+    <!-- 可见性同时约束列表和计数，且仅查询帖子赞，防止评论赞混入主页。 -->
+    <sql id="HomeFilter">
+        l.uid=#{uid} AND l.targettype='帖子' AND p.wstatus='展示'
+        AND EXISTS(SELECT 1 FROM user owner WHERE owner.uid=l.uid
+                   AND (owner.vis_like=1 OR owner.uid=#{viewerUid}))
+    </sql>
+    <select id="homeCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM liketable l JOIN pwork p ON p.pid=l.targetid
+        WHERE <include refid="HomeFilter"/>
+    </select>
+    <select id="homePage" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM liketable l JOIN pwork p ON p.pid=l.targetid
+        LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE <include refid="HomeFilter"/>
+        ORDER BY l.likect DESC, l.lid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+</mapper>

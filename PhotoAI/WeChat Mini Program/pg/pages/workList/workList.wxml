@@ -1,0 +1,42 @@
+<view class="container publish-container">
+  <view class="card">
+    <text class="section-title">分享你的摄影作品</text>
+    <text class="tip-text">上传单张 JPEG / PNG 图片，最多10MB。作品提交后需等待审核。</text>
+    <image wx:if="{{previewUrl}}" class="work-preview" src="{{previewUrl}}" mode="aspectFit" bindtap="previewImage" aria-label="点击预览作品图片"></image>
+    <view wx:else class="image-placeholder">选择一张照片，记录你的视角</view>
+    <button class="btn-outline choose-btn" bindtap="chooseImage" disabled="{{choosing || uploading || submitting}}" loading="{{choosing || uploading}}">{{uploading ? '安全上传中...' : (choosing ? '选择图片中...' : (previewUrl ? '重新选择图片' : '选择图片'))}}</button>
+    <text wx:if="{{imageUrl}}" class="upload-success">安全上传完成，点击图片可预览</text>
+    <text wx:if="{{uploadError}}" class="error-text">{{uploadError}}</text>
+    <view wx:if="{{imageUrl}}" class="exif-section">
+      <text class="label">拍摄参数（只读）</text>
+      <text class="tip-text">来自图片的六项安全参数，未提供的参数显示“—”。</text>
+      <view class="exif-grid">
+        <view wx:for="{{exifItems}}" wx:key="key" class="exif-item">
+          <text class="exif-label">{{item.label}}</text>
+          <text class="exif-value" selectable>{{item.value}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="form-item">
+      <view class="label-row"><label class="label" for="work-title">标题（必填）</label><text class="counter {{titleLength > 100 ? 'error-text' : ''}}">{{titleLength}}/100</text></view>
+      <input id="work-title" class="input" placeholder="为这张照片取个标题" maxlength="-1" value="{{title}}" bindinput="onInputChange" data-field="title" disabled="{{submitting}}" />
+    </view>
+    <view class="form-item">
+      <view class="label-row"><label class="label" for="work-desc">描述（可留空）</label><text class="counter {{descLength > 255 ? 'error-text' : ''}}">{{descLength}}/255</text></view>
+      <textarea id="work-desc" class="input desc-input" placeholder="分享拍摄时的故事，可留空" maxlength="-1" value="{{desc}}" bindinput="onInputChange" data-field="desc" disabled="{{submitting}}"></textarea>
+    </view>
+    <view class="form-item">
+      <text class="label">分类（必填）</text>
+      <picker mode="selector" range="{{categories}}" range-key="pcname" value="{{categoryIndex < 0 ? 0 : categoryIndex}}" bindchange="onCategoryChange" disabled="{{submitting || categoriesLoading || !categoriesLoaded || !categories.length}}" aria-label="选择作品分类">
+        <view class="input category-picker {{categoryIndex < 0 ? 'picker-placeholder' : ''}}">{{categoriesLoading ? '分类加载中...' : (categoryName || '请选择作品分类')}}</view>
+      </picker>
+      <text wx:if="{{categoryError}}" class="error-text">{{categoryError}}</text>
+      <button wx:if="{{!categoriesLoading && (!categoriesLoaded || !categories.length)}}" class="btn-outline retry-btn" bindtap="loadCategories" disabled="{{submitting}}">重新加载分类</button>
+    </view>
+    <text wx:if="{{submitError}}" class="error-text">{{submitError}}</text>
+    <button class="btn-primary publish-btn" bindtap="submitForm" loading="{{submitting}}" disabled="{{choosing || uploading || submitting || !imageUrl || !categoriesLoaded || categoriesLoading || !categories.length || categoryIndex < 0 || !titleLength || titleLength > 100 || descLength > 255}}">{{submitting ? '提交中...' : '提交审核'}}</button>
+  </view>
+</view>

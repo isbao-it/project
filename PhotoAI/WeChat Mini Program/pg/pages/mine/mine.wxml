@@ -1,0 +1,102 @@
+<view class="header-area">
+  <view class="me-hero" style="padding-top:{{statusBarH}}px"></view>
+  <view class="me-card pa-card">
+    <view wx:if="{{userInfo.uid}}" class="me-top">
+      <image class="pa-ava profile-avatar" src="{{avatarUrl}}" mode="aspectFill" bindtap="previewAvatar"></image>
+      <view class="profile-text">
+        <text class="profile-name">{{userInfo.nickname || '微信用户'}}</text>
+        <text class="profile-bio">{{userInfo.bio || '还没有填写简介'}}</text>
+      </view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-tip">资料加载中...</view>
+    <view wx:if="{{profileError}}" class="empty-tip">
+      资料加载失败
+      <button class="pa-btn-ghost retry-btn" bindtap="refresh">重新加载</button>
+    </view>
+    <view class="stats">
+      <view class="stat" hover-class="stat-hover" bindtap="openRelation" data-type="likes"><text class="stat-number">{{likedTotal}}</text><text class="stat-label">获赞</text></view>
+      <view class="stat" hover-class="stat-hover" bindtap="openRelation" data-type="following"><text class="stat-number">{{followingCount}}</text><text class="stat-label">关注</text></view>
+      <view class="stat" hover-class="stat-hover" bindtap="openRelation" data-type="followers"><text class="stat-number">{{followersCount}}</text><text class="stat-label">粉丝</text></view>
+    </view>
+  </view>
+  <view class="me-tabs">
+    <view class="me-tab {{tab === 'works' ? 'on' : ''}}" data-tab="works" bindtap="switchTab">作品</view>
+    <view class="me-tab {{tab === 'favorites' ? 'on' : ''}}" data-tab="favorites" bindtap="switchTab">收藏</view>
+    <view class="me-tab {{tab === 'likes' ? 'on' : ''}}" data-tab="likes" bindtap="switchTab">喜欢</view>
+    <view class="me-tab {{tab === 'settings' ? 'on' : ''}}" data-tab="settings" bindtap="switchTab">设置</view>
+  </view>
+</view>
+<scroll-view class="content" scroll-y bindscrolltolower="onReachBottom">
+  <view class="content-inner">
+    <block wx:if="{{tab === 'works'}}">
+      <view wx:for="{{list}}" wx:key="pid" class="pa-card work-card" data-pid="{{item.pid}}" bindtap="openWork" role="button" aria-label="查看{{item.wtitle}}">
+        <image class="work-image" src="{{item.imageUrl}}" mode="aspectFill"></image>
+        <view class="work-info">
+          <text class="work-title">{{item.wtitle}}</text>
+          <text class="tag {{item.wstatus === '展示' ? 'tag-active' : ''}}">{{item.wstatus}}</text>
+          <text wx:if="{{item.reason}}" class="work-reason">审核说明：{{item.reason}}</text>
+        </view>
+      </view>
+      <view wx:if="{{worksLoading}}" class="loading-tip">作品加载中...</view>
+      <view wx:elif="{{worksError}}" class="empty-tip">
+        作品加载失败
+        <button class="pa-btn-ghost retry-btn" bindtap="retryWorks">重试</button>
+      </view>
+      <view wx:elif="{{list.length === 0}}" class="empty-tip">{{status ? '暂无' + status + '作品' : '还没有作品'}}</view>
+      <view wx:elif="{{noMore}}" class="loading-tip">没有更多作品了</view>
+    </block>
+    <block wx:elif="{{tab === 'favorites'}}">
+      <view class="works-header">我的收藏<text class="works-total">共 {{favoritesTotal}} 件</text></view>
+      <view wx:for="{{favorites}}" wx:key="pid" class="pa-card work-card" data-pid="{{item.pid}}" bindtap="openWork" role="button" aria-label="查看{{item.wtitle}}">
+        <image class="work-image" src="{{item.imageUrl}}" mode="aspectFill"></image>
+        <view class="work-info"><text class="work-title">{{item.wtitle}}</text></view>
+        <view class="fav-remove" data-pid="{{item.pid}}" catchtap="removeFavorite">取消收藏</view>
+      </view>
+      <view wx:if="{{favoritesLoading}}" class="loading-tip">收藏加载中...</view>
+      <view wx:elif="{{favoritesError}}" class="empty-tip">
+        收藏加载失败
+        <button class="pa-btn-ghost retry-btn" bindtap="retryFavorites">重试</button>
+      </view>
+      <view wx:elif="{{favorites.length === 0}}" class="empty-tip">还没有收藏的作品</view>
+      <view wx:elif="{{favoritesNoMore}}" class="loading-tip">没有更多收藏了</view>
+    </block>
+    <block wx:elif="{{tab === 'likes'}}">
+      <view class="works-header">我的喜欢<text class="works-total">共 {{likesTotal}} 件</text></view>
+      <view wx:for="{{likes}}" wx:key="pid" class="pa-card work-card" data-pid="{{item.pid}}" bindtap="openWork" role="button" aria-label="查看{{item.wtitle}}">
+        <image class="work-image" src="{{item.imageUrl}}" mode="aspectFill"></image>
+        <view class="work-info">
+          <text class="work-title">{{item.wtitle}}</text>
+          <text class="profile-bio">{{item.uname || '微信用户'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{likesLoading}}" class="loading-tip">喜欢加载中...</view>
+      <view wx:elif="{{likesError}}" class="empty-tip">
+        喜欢加载失败
+        <button class="pa-btn-ghost retry-btn" bindtap="retryLikes">重试</button>
+      </view>
+      <view wx:elif="{{likes.length === 0}}" class="empty-tip">还没有喜欢的作品</view>
+      <view wx:elif="{{likesNoMore}}" class="loading-tip">没有更多喜欢了</view>
+    </block>
+    <view wx:elif="{{tab === 'settings'}}" class="me-list pa-card">
+      <view class="me-item privacy-row">
+        <view class="privacy-copy"><text>收藏可见</text><text class="privacy-hint">开启后别人能在你的主页看到你的收藏</text></view>
+        <switch checked="{{visFavorite}}" data-field="visFavorite" bindchange="togglePrivacy" disabled="{{privacyLoading || loading || !privacyReady}}" aria-label="收藏可见" />
+      </view>
+      <view class="me-item privacy-row">
+        <view class="privacy-copy"><text>喜欢可见</text><text class="privacy-hint">开启后别人能在你的主页看到你的喜欢</text></view>
+        <switch checked="{{visLike}}" data-field="visLike" bindchange="togglePrivacy" disabled="{{privacyLoading || loading || !privacyReady}}" aria-label="喜欢可见" />
+      </view>
+      <view class="me-item privacy-row">
+        <view class="privacy-copy"><text>关注可见</text><text class="privacy-hint">开启后别人能看到你关注了谁</text></view>
+        <switch checked="{{visFollowing}}" data-field="visFollowing" bindchange="togglePrivacy" disabled="{{privacyLoading || loading || !privacyReady}}" aria-label="关注可见" />
+      </view>
+      <view class="me-item privacy-row">
+        <view class="privacy-copy"><text>粉丝可见</text><text class="privacy-hint">开启后别人能看到谁关注了你</text></view>
+        <switch checked="{{visFollowers}}" data-field="visFollowers" bindchange="togglePrivacy" disabled="{{privacyLoading || loading || !privacyReady}}" aria-label="粉丝可见" />
+      </view>
+      <view class="me-divider"></view>
+      <button class="me-item" bindtap="goEditProfile">编辑资料</button>
+      <button class="me-item logout-btn" bindtap="doLogout">退出登录</button>
+    </view>
+  </view>
+</scroll-view>

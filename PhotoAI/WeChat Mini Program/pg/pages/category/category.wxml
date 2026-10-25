@@ -1,0 +1,52 @@
+<view class="category-container">
+  <view class="category-header" style="padding-top:{{statusBarH}}px">
+    <view class="category-nav">
+      <view class="category-back" bindtap="goBack" hover-class="pressed" role="button" aria-label="返回">‹</view>
+      <text class="category-heading">{{title}}</text>
+    </view>
+  </view>
+  <scroll-view wx:if="{{view === 'grid'}}" class="category-body" scroll-y="{{true}}">
+    <view class="category-grid">
+      <view wx:for="{{categories}}" wx:key="pcid" class="pa-card category-tile" data-pcid="{{item.pcid}}" bindtap="openCategory" hover-class="pressed" role="button" aria-label="{{item.pcname + '，' + item.count + '件作品'}}">
+        <text class="category-name">{{item.pcname}}</text>
+        <text class="category-count">{{item.count}} 件作品</text>
+      </view>
+    </view>
+    <view wx:if="{{categoriesLoading}}" class="state-tip">加载中...</view>
+    <view wx:elif="{{categoriesError}}" class="state-tip">
+      <view>分类加载失败</view>
+      <view class="pa-btn-ghost retry-btn" bindtap="loadCategories" hover-class="pressed" role="button">重试</view>
+    </view>
+    <view wx:elif="{{categories.length === 0}}" class="state-tip">暂无分类</view>
+  </scroll-view>
+
+  <scroll-view wx:if="{{view === 'works'}}" class="category-body" scroll-y="{{true}}" scroll-top="{{worksScrollTop}}" bindscroll="onWorksScroll" bindscrolltolower="loadMore" lower-threshold="100">
+    <view class="category-tabs" role="tablist">
+      <view class="category-tab {{tab === 'latest' ? 'on' : ''}}" data-tab="latest" bindtap="switchTab" hover-class="pressed" role="tab" aria-selected="{{tab === 'latest'}}">最新</view>
+      <view class="category-tab {{tab === 'hot' ? 'on' : ''}}" data-tab="hot" bindtap="switchTab" hover-class="pressed" role="tab" aria-selected="{{tab === 'hot'}}">热门</view>
+    </view>
+    <view class="works-grid">
+      <view wx:for="{{list}}" wx:key="pid" class="pa-card work-card" data-pid="{{item.pid}}" bindtap="goDetail" role="link" aria-label="{{'查看作品：' + item.wtitle}}">
+        <view class="work-cover">
+          <image class="work-img" src="{{item.imageUrl}}" mode="widthFix"></image>
+          <view class="card-views">{{item.viewcount}}</view>
+          <text class="pa-tag work-category">{{item.pcname}}</text>
+          <text class="pa-tag work-likes">♡ {{item.likep}}</text>
+        </view>
+        <view class="work-title">{{item.wtitle}}</view>
+        <view class="work-meta">
+          <image wx:if="{{item.avatarUrl}}" class="author-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view wx:else class="author-avatar author-avatar-empty"></view>
+          <text>{{item.uname || '摄影作者'}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{loading}}" class="state-tip">加载中...</view>
+    <view wx:elif="{{loadError}}" class="state-tip">
+      <view>作品加载失败</view>
+      <view class="pa-btn-ghost retry-btn" bindtap="retryWorks" hover-class="pressed" role="button">重试</view>
+    </view>
+    <view wx:elif="{{list.length === 0}}" class="state-tip">暂无公开作品</view>
+    <view wx:elif="{{noMore}}" class="state-tip">没有更多了</view>
+  </scroll-view>
+</view>

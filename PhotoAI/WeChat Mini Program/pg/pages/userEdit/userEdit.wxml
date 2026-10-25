@@ -1,0 +1,22 @@
+<view class="container">
+  <view class="card">
+    <view class="form-item">
+      <text class="label">头像（只读）</text>
+      <image wx:if="{{avatarPreviewUrl}}" class="avatar-preview" src="{{avatarPreviewUrl}}" mode="aspectFill"></image>
+    </view>
+    <view class="form-item">
+      <text class="label">昵称（必填，最多50字）</text>
+      <input class="input" placeholder="请输入昵称" maxlength="-1" value="{{form.nickname}}" bindinput="onInputChange" data-field="nickname" disabled="{{loading || loadError || submitting}}" />
+    </view>
+    <view class="form-item">
+      <text class="label">简介（最多255字）</text>
+      <textarea class="input bio-input" placeholder="介绍一下自己，可留空" maxlength="-1" value="{{form.bio}}" bindinput="onInputChange" data-field="bio" disabled="{{loading || loadError || submitting}}"></textarea>
+    </view>
+    <view wx:if="{{loading}}" class="tip-text">资料加载中...</view>
+    <view wx:if="{{loadError}}" class="tip-text">
+      资料加载失败
+      <button class="btn-outline retry-btn" bindtap="loadUserInfo">重新加载</button>
+    </view>
+    <button class="btn-primary save-btn" bindtap="submitForm" disabled="{{loading || loadError || submitting}}" loading="{{submitting}}">{{submitting ? '保存中...' : '保存修改'}}</button>
+  </view>
+</view>

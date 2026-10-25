@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.ProfileMapper">
+    <sql id="profileColumns">uid, uname, pnum, role, avatar, vote, uct, status, bio</sql>
+    <select id="findById" resultType="com.pg.domain.User">
+        SELECT <include refid="profileColumns"/> FROM user WHERE uid = #{uid}
+    </select>
+    <select id="findByOpenid" resultType="com.pg.domain.User">
+        SELECT <include refid="profileColumns"/> FROM user WHERE openid = #{openid}
+    </select>
+    <insert id="insertAccount">
+        INSERT INTO user (uid, uname, avatar, role, status, vote, pnum, pwd, openid)
+        VALUES (#{uid}, #{uname}, #{avatar}, '普通用户', '正常', '0', NULL, NULL, #{openid})
+    </insert>
+    <!-- 只生成三个白名单列；不使用整实体更新，也不把空 bio 当成未传。 -->
+    <update id="updateProfile">
+        UPDATE user
+        <set>
+            <if test="changes.containsKey('nickname')">uname = #{changes.nickname},</if>
+            <if test="changes.containsKey('avatar')">avatar = #{changes.avatar},</if>
+            <if test="changes.containsKey('bio')">bio = #{changes.bio},</if>
+        </set>
+        WHERE uid = #{uid}
+    </update>
+</mapper>

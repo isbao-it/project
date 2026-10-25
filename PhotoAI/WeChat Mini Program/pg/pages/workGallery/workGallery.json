@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "作品画廊",
+  "navigationStyle": "custom",
+  "usingComponents": {},
+  "enablePullDownRefresh": false,
+  "disableScroll": true
+}

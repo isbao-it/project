@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/mine/mine",
+    "pages/userList/userList",
+    "pages/userEdit/userEdit",
+    "pages/workList/workList",
+    "pages/workDetail/workDetail",
+    "pages/workGallery/workGallery",
+    "pages/userDetail/userDetail",
+    "pages/category/category",
+    "pages/relation/relation",
+    "pages/workEdit/workEdit"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "微信小程序摄影作品展示平台",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F6F7F8",
+    "backgroundColorTop": "#F6F7F8",
+    "backgroundColorBottom": "#F6F7F8",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": true
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9499A0",
+    "selectedColor": "#FB7299",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/workGallery/workGallery",
+        "text": "首页",
+        "iconPath": "images/gallery.png",
+        "selectedIconPath": "images/gallery_active.png"
+      },
+      {
+        "pagePath": "pages/workList/workList",
+        "text": "发布",
+        "iconPath": "images/work.png",
+        "selectedIconPath": "images/work_active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "images/user.png",
+        "selectedIconPath": "images/user_active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "renderer": "webview",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,41 @@
+<view class="header-area" style="padding-top:{{statusBarH}}px">
+  <view class="topbar"><view class="back" bindtap="goBack" role="button" aria-label="返回">‹</view></view>
+  <view wx:if="{{user}}" class="profile-card pa-card">
+    <view class="profile-top">
+      <image class="profile-avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
+      <view class="profile-text">
+        <text class="profile-name">{{user.uname || '微信用户'}}</text>
+        <text wx:if="{{user.bio}}" class="profile-bio">{{user.bio}}</text>
+      </view>
+      <view class="follow {{user.followed ? 'followed' : ''}} {{followLoading ? 'disabled' : ''}}" bindtap="toggleFollow" role="button" aria-disabled="{{followLoading}}">{{isSelf ? '编辑资料' : (user.followed ? '已关注' : '关注')}}</view>
+    </view>
+    <view class="stats">
+      <view class="stat" bindtap="switchTab" data-tab="works" role="button" aria-label="查看作品"><text class="stat-number">{{user.worksCount}}</text><text class="stat-label">作品</text></view>
+      <view class="stat" bindtap="openRelation" data-type="following" role="button" aria-label="查看关注"><text class="stat-number">{{user.showFollowing ? user.followingCount : '—'}}</text><text class="stat-label">关注</text></view>
+      <view class="stat" bindtap="openRelation" data-type="followers" role="button" aria-label="查看粉丝"><text class="stat-number">{{user.showFollowers ? user.followersCount : '—'}}</text><text class="stat-label">粉丝</text></view>
+      <view class="stat"><text class="stat-number">{{user.likedTotal == null ? '—' : user.likedTotal}}</text><text class="stat-label">获赞</text></view>
+    </view>
+  </view>
+  <view wx:if="{{profileLoading}}" class="loading-tip">资料加载中...</view>
+  <view wx:if="{{profileError}}" class="empty-tip">资料加载失败<view wx:if="{{uid}}" class="retry-btn" bindtap="loadProfile" role="button">重试</view></view>
+  <view class="me-tabs">
+    <view class="me-tab {{tab === 'works' ? 'on' : ''}}" data-tab="works" bindtap="switchTab">作品</view>
+    <view wx:if="{{showFavorites}}" class="me-tab {{tab === 'favorites' ? 'on' : ''}}" data-tab="favorites" bindtap="switchTab">收藏</view>
+    <view wx:if="{{showLikes}}" class="me-tab {{tab === 'likes' ? 'on' : ''}}" data-tab="likes" bindtap="switchTab">喜欢</view>
+  </view>
+</view>
+<scroll-view class="content" scroll-y bindscrolltolower="onReachBottom" refresher-enabled="{{!!uid}}" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onPullDownRefresh">
+  <view wx:if="{{uid}}" class="content-inner">
+    <view wx:for="{{lists[tab].list}}" wx:key="pid" class="pa-card work-card" data-pid="{{item.pid}}" bindtap="openWork" role="button" aria-label="查看{{item.wtitle}}">
+      <image class="work-image" src="{{item.imageUrl}}" mode="aspectFill"></image>
+      <view class="work-info">
+        <text class="work-title">{{item.wtitle}}</text>
+        <text class="work-status">{{item.wstatus}}</text>
+      </view>
+    </view>
+    <view wx:if="{{lists[tab].loading}}" class="loading-tip">加载中...</view>
+    <view wx:elif="{{lists[tab].error}}" class="empty-tip">列表加载失败<view class="retry-btn" bindtap="retryList" role="button">重试</view></view>
+    <view wx:elif="{{lists[tab].list.length === 0}}" class="empty-tip">{{emptyTips[tab]}}</view>
+    <view wx:elif="{{lists[tab].noMore}}" class="loading-tip">没有更多了</view>
+  </view>
+</scroll-view>

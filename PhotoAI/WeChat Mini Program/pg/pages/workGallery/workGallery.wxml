@@ -1,0 +1,58 @@
+<view class="gallery-page">
+  <view class="gallery-header" style="padding-top:{{statusBarH}}px;padding-right:{{navRight}}px">
+    <text class="gallery-logo">PhotoAI</text>
+    <view class="gallery-search">
+      <text>🔍</text>
+      <text class="search-placeholder">搜索作品 / 摄影师</text>
+    </view>
+  </view>
+  <view class="gallery-sticky">
+    <view class="gallery-tabs" role="tablist">
+      <button wx:for="{{tabs}}" wx:key="value" class="gallery-tab {{tab === item.value ? 'on' : ''}}" data-tab="{{item.value}}" bindtap="onTabChange" role="tab" aria-selected="{{tab === item.value}}">{{item.label}}</button>
+      <view class="gallery-tab gallery-tab-entry" bindtap="goCategory" role="link" aria-label="分类">分类</view>
+    </view>
+  </view>
+  <swiper class="gallery-swiper" current="{{tabIndex}}" bindchange="onSwiperChange" duration="220">
+    <swiper-item wx:for="{{tabs}}" wx:for-item="tabItem" wx:key="value">
+      <scroll-view class="gallery-scroll" scroll-y refresher-enabled
+                   refresher-triggered="{{states[tabItem.value].refreshing}}"
+                   bindrefresherrefresh="onRefresh" bindscrolltolower="onLoadMore"
+                   lower-threshold="100" data-tab="{{tabItem.value}}">
+        <view class="gallery-container">
+          <view wx:if="{{tabItem.value === 'following' && followingLoginRequired}}" class="empty-tip">
+            <view>登录后查看关注</view>
+            <button class="pa-btn-ghost retry-btn" bindtap="goLogin">微信登录</button>
+          </view>
+          <block wx:else>
+            <view wx:if="{{!loggedIn}}" class="gallery-login">
+              <button class="pa-btn-ghost" size="mini" bindtap="goLogin">微信登录</button>
+            </view>
+            <view class="gallery-grid">
+              <view wx:for="{{states[tabItem.value].list}}" wx:key="pid" class="pa-card gallery-card" data-pid="{{item.pid}}" bindtap="goDetail" role="link" aria-label="{{'查看作品：' + item.wtitle}}">
+                <view class="gallery-cover">
+                  <image class="gallery-img" src="{{item.imageUrl}}" mode="widthFix"></image>
+                  <view class="card-views">{{item.viewcount}}</view>
+                  <text class="pa-tag gallery-category">{{item.pcname}}</text>
+                  <text class="pa-tag gallery-likes">♡ {{item.likep}}</text>
+                </view>
+                <view class="gallery-title">{{item.wtitle}}</view>
+                <view class="gallery-meta">
+                  <image wx:if="{{item.avatarUrl}}" class="author-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+                  <view wx:else class="author-avatar author-avatar-empty"></view>
+                  <text>{{item.uname || '摄影作者'}}</text>
+                </view>
+              </view>
+            </view>
+            <view wx:if="{{states[tabItem.value].loading}}" class="loading-tip">加载中...</view>
+            <view wx:elif="{{states[tabItem.value].error}}" class="empty-tip">
+              作品加载失败
+              <button class="pa-btn-ghost retry-btn" data-tab="{{tabItem.value}}" bindtap="retryGallery">重试</button>
+            </view>
+            <view wx:elif="{{states[tabItem.value].list.length === 0}}" class="empty-tip">{{tabItem.value === 'following' ? '关注的作者暂无作品' : '暂无公开作品'}}</view>
+            <view wx:elif="{{states[tabItem.value].noMore}}" class="loading-tip">没有更多作品了</view>
+          </block>
+        </view>
+      </scroll-view>
+    </swiper-item>
+  </swiper>
+</view>

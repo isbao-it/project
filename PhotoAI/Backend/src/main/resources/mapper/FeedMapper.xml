@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.FeedMapper">
+    <sql id="VisibleFollowed">
+        f.uid=#{uid} AND p.wstatus='展示'
+    </sql>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM follow f JOIN pwork p ON p.uid=f.tuid
+        WHERE <include refid="VisibleFollowed"/>
+    </select>
+    <select id="page" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM follow f JOIN pwork p ON p.uid=f.tuid
+        LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE <include refid="VisibleFollowed"/>
+        ORDER BY p.cwtime DESC, p.pid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+</mapper>

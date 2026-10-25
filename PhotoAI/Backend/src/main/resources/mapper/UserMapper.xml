@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.UserMapper">
+<!--    定义了 BaseResultMap 和 Base_Column_List。-->
+<!--    BaseResultMap 负责将数据库 user 表的字段与 com.pg.domain.User 实体类的属性进行精准映射-->
+<!--    特别是指定了 uct 字段的 jdbcType 为 TIMESTAMP-->
+    <resultMap id="BaseResultMap" type="com.pg.domain.User">
+        <id property="uid" column="uid" jdbcType="VARCHAR"/>
+        <result property="uname" column="uname" jdbcType="VARCHAR"/>
+        <result property="pnum" column="pnum" jdbcType="VARCHAR"/>
+        <result property="role" column="role" jdbcType="VARCHAR"/>
+        <result property="pwd" column="pwd" jdbcType="VARCHAR"/>
+        <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+        <result property="vote" column="vote" jdbcType="VARCHAR"/>
+        <result property="uct" column="uct" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        uid, uname, pnum, role, pwd, avatar, vote, uct, status
+    </sql>
+
+    <!-- 多条件分页查询（支持用户名、手机号、角色、状态） -->
+    <!--查询语句 queryUser 实现了动态多条件检索功能-->
+    <select id="queryUser" resultMap="BaseResultMap" >
+        select <include refid="Base_Column_List"/>
+        from user
+        <where>
+            <if test="uname != null and uname != ''">
+                <bind name="unamePattern" value="'%' + uname + '%'"/>
+                and uname like #{unamePattern}
+--                 MyBatis 自带的 bind 标签来预处理模糊查询的参数。
+            </if>
+            <if test="pnum != null and pnum != ''">
+                <bind name="pnumPattern" value="'%' + pnum + '%'"/>
+                and pnum like #{pnumPattern}
+            </if>
+            <if test="role != null and role != ''">
+                and role = #{role}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by uct desc
+    </select>
+
+    <select id="homeProfile" resultType="com.pg.mapper.UserMapper$HomeProfile">
+        SELECT u.uid,u.uname,u.role,u.avatar,u.vote,u.uct,u.status,u.bio,
+            (SELECT COALESCE(SUM(p.likep),0) FROM pwork p WHERE p.uid = u.uid AND p.wstatus='展示') AS likedTotal
+        FROM user u WHERE u.uid=#{uid}
+    </select>
+    <resultMap id="HomeState" type="java.util.LinkedHashMap">
+        <result column="worksCount" property="worksCount" javaType="java.lang.Long"/>
+        <result column="followingCount" property="followingCount" javaType="java.lang.Long"/>
+        <result column="followersCount" property="followersCount" javaType="java.lang.Long"/>
+        <result column="followed" property="followed" javaType="java.lang.Boolean"/>
+        <result column="showFavorites" property="showFavorites" javaType="java.lang.Boolean"/>
+        <result column="showLikes" property="showLikes" javaType="java.lang.Boolean"/>
+        <result column="showFollowing" property="showFollowing" javaType="java.lang.Boolean"/>
+        <result column="showFollowers" property="showFollowers" javaType="java.lang.Boolean"/>
+    </resultMap>
+    <select id="homeState" resultMap="HomeState">
+        SELECT
+            (SELECT COUNT(*) FROM pwork p WHERE p.uid=u.uid AND p.wstatus='展示') AS worksCount,
+            (SELECT COUNT(*) FROM follow f WHERE f.uid=u.uid) AS followingCount,
+            (SELECT COUNT(*) FROM follow f WHERE f.tuid=u.uid) AS followersCount,
+            EXISTS(SELECT 1 FROM follow f WHERE f.uid=#{viewerUid} AND f.tuid=u.uid) AS followed,
+            (u.vis_favorite=1 OR COALESCE(u.uid=#{viewerUid},0)) AS showFavorites,
+            (u.vis_like=1 OR COALESCE(u.uid=#{viewerUid},0)) AS showLikes,
+            (u.vis_following=1 OR COALESCE(u.uid=#{viewerUid},0)) AS showFollowing,
+            (u.vis_followers=1 OR COALESCE(u.uid=#{viewerUid},0)) AS showFollowers
+        FROM user u WHERE u.uid=#{uid}
+    </select>
+    <sql id="HomeWorksFilter">
+        p.uid=#{uid} AND p.wstatus='展示'
+    </sql>
+    <select id="worksCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork p WHERE <include refid="HomeWorksFilter"/>
+    </select>
+    <select id="works" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE <include refid="HomeWorksFilter"/>
+        ORDER BY p.cwtime DESC, p.pid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <update id="updatePrivacy">
+        UPDATE user SET vis_favorite=#{visFavorite},vis_like=#{visLike},
+            vis_following=#{visFollowing},vis_followers=#{visFollowers} WHERE uid=#{uid}
+    </update>
+</mapper>

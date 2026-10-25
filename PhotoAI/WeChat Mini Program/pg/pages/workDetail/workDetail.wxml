@@ -1,0 +1,86 @@
+<view wx:if="{{work}}" class="detail-container">
+  <image wx:if="{{imageUrl}}" class="detail-hero" src="{{imageUrl}}" mode="aspectFill" bindtap="previewImage" role="button" aria-label="预览作品大图"></image>
+  <view wx:else class="detail-hero detail-image-empty">暂无图片</view>
+  <view class="hero-back" style="top: {{statusBarH + 12}}px;" bindtap="goBack" role="button" aria-label="返回画廊">‹</view>
+  <view class="detail-body">
+    <text class="d-title">{{work.wtitle || '未命名作品'}}</text>
+    <text wx:if="{{subtitle}}" class="d-sub">{{subtitle}}</text>
+    <view wx:if="{{isOwner}}" class="owner-row">
+      <text class="owner-status" style="color:{{work.wstatus === '展示' ? '#1AA260' : work.wstatus === '待审核' ? '#FF8F1F' : work.wstatus === '已驳回' ? '#FB7299' : '#9499A0'}};background:{{work.wstatus === '展示' ? '#E8F8EF' : work.wstatus === '待审核' ? '#FFF3E6' : work.wstatus === '已驳回' ? '#FFE8EF' : '#F2F3F5'}}">{{work.wstatus}}</text>
+      <button class="owner-more" bindtap="openMore">更多</button>
+    </view>
+    <view wx:if="{{!isOwner}}" class="author">
+      <image wx:if="{{avatarUrl}}" class="pa-ava author-avatar" src="{{avatarUrl}}" mode="aspectFill" bindtap="goAuthor" data-uid="{{work.uid}}" role="button" aria-label="查看作者主页"></image>
+      <view wx:else class="pa-ava author-avatar author-placeholder" bindtap="goAuthor" data-uid="{{work.uid}}" role="button" aria-label="查看作者主页"></view>
+      <text class="author-name">{{author ? (author.nickname || '未知作者') : '未知作者'}}</text>
+      <button class="follow {{following ? 'followed' : ''}}" bindtap="toggleFollow" disabled="{{followLoading}}">{{following ? '已关注' : '关注'}}</button>
+    </view>
+    <!-- viewCount 来自详情接口 work.viewcount，客户端仅展示服务端自增后的值。 -->
+    <view class="detail-stats">
+      <text class="stat-item">♡ {{likeCount}}</text>
+      <text class="stat-item">☆ {{favoriteCount === null ? '—' : favoriteCount}}</text>
+      <text class="stat-item">{{viewCount}} 次浏览</text>
+    </view>
+    <view class="actions">
+      <button class="act {{liked ? 'active' : ''}}" bindtap="toggleLike" disabled="{{likeLoading}}" aria-label="{{liked ? '取消点赞' : '点赞'}}">
+        <text class="act-icon">♥</text><text>{{likeCount}}</text>
+      </button>
+      <button class="act {{favorited ? 'active' : ''}}" bindtap="toggleFavorite" disabled="{{favoriteLoading}}" aria-label="{{favorited ? '取消收藏' : '收藏'}}">
+        <text class="act-icon">☆</text><text wx:if="{{favoriteCount !== null}}">{{favoriteCount}}</text>
+      </button>
+      <button class="act" bindtap="scrollToComments" aria-label="查看评论">
+        <text class="act-icon">💬</text><text>{{commentTotal}}</text>
+      </button>
+      <button class="act" bindtap="promptShare" aria-label="分享作品">
+        <text class="act-icon">↗</text><text>分享</text>
+      </button>
+    </view>
+    <view wx:if="{{similarList.length}}" class="similar">
+      <view class="similar-heading"><text>📷 同款机位 · 参数相近的作品</text><text>›</text></view>
+      <scroll-view class="similar-scroll" scroll-x="{{true}}">
+        <view wx:for="{{similarList}}" wx:key="pid" class="similar-item" data-pid="{{item.pid}}" bindtap="openSimilar" role="button" aria-label="查看{{item.wtitle || '未命名作品'}}">
+          <image wx:if="{{item.imageUrl}}" class="similar-image" src="{{item.imageUrl}}" mode="aspectFill"></image>
+          <view wx:else class="similar-image similar-empty">暂无图片</view>
+          <text class="similar-title">{{item.wtitle || '未命名作品'}}</text>
+        </view>
+      </scroll-view>
+    </view>
+    <view id="comments" class="cmt">
+      <text class="comment-heading">评论 {{commentTotal}}</text>
+      <view wx:for="{{comments}}" wx:key="cid" class="comment-item">
+        <view wx:if="{{item.uid}}" style="flex-shrink:0" bindtap="goAuthor" data-uid="{{item.uid}}" role="button" aria-label="查看评论者主页">
+          <image wx:if="{{item.avatarUrl}}" class="pa-ava comment-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view wx:else class="pa-ava comment-avatar author-placeholder"></view>
+        </view>
+        <block wx:else>
+          <image wx:if="{{item.avatarUrl}}" class="pa-ava comment-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view wx:else class="pa-ava comment-avatar author-placeholder"></view>
+        </block>
+        <view class="comment-main">
+          <view class="comment-top">
+            <text class="comment-name">{{item.nickname || '未知用户'}}</text>
+            <button wx:if="{{currentUid && item.uid === currentUid}}" class="comment-delete" data-cid="{{item.cid}}" bindtap="deleteComment" disabled="{{submitting || commentLoading}}">删除</button>
+          </view>
+          <text class="comment-content" selectable>{{item.content}}</text>
+          <text class="comment-time">{{item.timeText}}</text>
+        </view>
+      </view>
+      <view wx:if="{{commentLoading}}" class="comment-state">评论加载中…</view>
+      <view wx:elif="{{commentError}}" class="comment-state">
+        <text>{{commentError}}</text><button class="pa-btn-ghost comment-retry" bindtap="retryComments">重试</button>
+      </view>
+      <view wx:elif="{{!comments.length}}" class="comment-state">还没有评论，来说两句</view>
+      <button wx:elif="{{comments.length < commentTotal}}" class="comment-more" bindtap="loadMoreComments">加载更多评论</button>
+      <view class="comment-input-row" bindtap="ensureCommentLogin">
+        <input class="comment-input" value="{{commentInput}}" placeholder="说点什么…" placeholder-class="comment-placeholder" maxlength="500" disabled="{{!loggedIn || submitting}}" bindinput="onCommentInput" bindconfirm="submitComment" confirm-type="send" aria-label="评论内容" />
+        <button class="pa-btn-primary comment-send" bindtap="submitComment" loading="{{submitting}}" disabled="{{submitting || commentLoading}}">发送</button>
+      </view>
+    </view>
+  </view>
+</view>
+<view wx:elif="{{loading}}" class="detail-state">作品加载中…</view>
+<view wx:else class="detail-state">
+  <text>{{errorMessage}}</text>
+  <button wx:if="{{canRetry}}" class="pa-btn-primary detail-retry" bindtap="retryDetail">重试</button>
+  <button class="pa-btn-ghost detail-back" bindtap="goBack">返回画廊</button>
+</view>

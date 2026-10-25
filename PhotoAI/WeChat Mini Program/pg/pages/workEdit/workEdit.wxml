@@ -1,0 +1,35 @@
+<view class="edit-header" style="padding-top:{{statusBarH}}px">
+  <view class="edit-nav">
+    <button class="edit-back" bindtap="goBack" aria-label="返回">‹</button>
+    <text class="edit-heading">编辑作品</text>
+  </view>
+</view>
+<view wx:if="{{loading}}" class="edit-state">作品加载中…</view>
+<view wx:elif="{{work}}" class="edit-form">
+  <image class="edit-cover" src="{{imageUrl}}" mode="aspectFill"></image>
+  <text class="cover-hint">暂不支持更换封面</text>
+  <view class="edit-field">
+    <text class="field-label">标题</text>
+    <input class="title-input" value="{{title}}" placeholder="作品标题" placeholder-class="edit-placeholder" maxlength="100" bindinput="onTitleInput" disabled="{{saving}}" aria-label="作品标题" />
+  </view>
+  <view class="edit-field">
+    <text class="field-label">描述</text>
+    <textarea class="desc-input" value="{{desc}}" placeholder="作品描述" placeholder-class="edit-placeholder" maxlength="255" bindinput="onDescInput" disabled="{{saving}}" aria-label="作品描述"></textarea>
+  </view>
+  <view class="edit-field">
+    <text class="field-label">分类</text>
+    <view wx:if="{{categoryLoading}}" class="category-state">分类加载中…</view>
+    <view wx:elif="{{categoryError}}" class="category-state">
+      分类加载失败
+      <button class="category-retry" bindtap="loadCategories">重试</button>
+    </view>
+    <view wx:elif="{{!categories.length}}" class="category-state">暂无可选分类</view>
+    <scroll-view wx:else class="category-scroll" scroll-x>
+      <button wx:for="{{categories}}" wx:key="pcid" class="category-pill {{categoryId === item.pcid ? 'selected' : ''}}" data-pcid="{{item.pcid}}" bindtap="selectCategory" disabled="{{saving}}">{{item.pcname}}</button>
+    </scroll-view>
+  </view>
+</view>
+<view wx:else class="edit-state">作品不存在或无权编辑</view>
+<view class="save-bar">
+  <button class="save-button" bindtap="save" loading="{{saving}}" disabled="{{loading || !work || categoryLoading || categoryError || saving}}">保存</button>
+</view>

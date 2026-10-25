@@ -1,0 +1,19 @@
+.form-item { margin-bottom: 32rpx; }
+.label { display: block; font-size: 28rpx; margin-bottom: 12rpx; color: #374151; }
+.input {
+  background-color: #f9fafb;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  border: 2rpx solid #e5e7eb;
+  width: 100%;
+  box-sizing: border-box;
+  height: 80rpx;
+  line-height: 80rpx;
+}
+.bio-input { height: 240rpx; line-height: 1.6; padding: 20rpx 24rpx; }
+.avatar-preview { width: 140rpx; height: 140rpx; border-radius: 50%; background-color: #f3f4f6; }
+.tip-text { font-size: 26rpx; color: #6b7280; margin-top: 20rpx; display: block; }
+.retry-btn { margin-top: 20rpx; }
+.save-btn { margin-top: 40rpx; }
+.save-btn[disabled] { background-color: #93c5fd; color: #fff; }

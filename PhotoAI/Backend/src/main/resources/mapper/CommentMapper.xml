@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.CommentMapper">
+    <resultMap id="Comment" type="com.pg.domain.Comment">
+        <id column="pid" property="pid"/>
+        <id column="cid" property="cid"/>
+        <id column="uid" property="uid"/>
+        <result column="comcontent" property="content"/>
+        <result column="createdAt" property="createdAt"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+    </resultMap>
+    <select id="displayed" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pwork WHERE pid=#{pid} AND wstatus='展示')
+    </select>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM comment c JOIN pwork p ON p.pid=c.pid
+        WHERE c.pid=#{pid} AND p.wstatus='展示'
+    </select>
+    <select id="page" resultMap="Comment">
+        SELECT c.pid,c.cid,c.uid,c.comcontent,
+               DATE_FORMAT(c.comct,'%Y-%m-%dT%H:%i:%s+08:00') AS createdAt,
+               u.uname AS nickname,u.avatar
+        FROM comment c JOIN pwork p ON p.pid=c.pid LEFT JOIN user u ON u.uid=c.uid
+        WHERE c.pid=#{pid} AND p.wstatus='展示'
+        ORDER BY c.comct DESC,c.cid ASC,c.uid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <insert id="insert">
+        INSERT INTO comment (pid,cid,uid,comcontent)
+        SELECT pid,#{cid},#{uid},#{content} FROM pwork WHERE pid=#{pid} AND wstatus='展示'
+    </insert>
+    <select id="findByCid" resultMap="Comment">
+        SELECT pid,cid,uid FROM comment WHERE cid=#{cid}
+    </select>
+    <delete id="delete">
+        DELETE c FROM comment c JOIN pwork p ON p.pid=c.pid
+        WHERE c.pid=#{pid} AND c.cid=#{cid} AND c.uid=#{uid} AND p.wstatus='展示'
+    </delete>
+</mapper>

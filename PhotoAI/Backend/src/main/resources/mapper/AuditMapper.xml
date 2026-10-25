@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.AuditMapper">
+    <select id="countPending" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork WHERE wstatus='待审核'
+    </select>
+    <select id="pending" resultType="java.util.LinkedHashMap">
+        SELECT p.pid,p.uid,p.wtitle,COALESCE(p.wdesc,'') AS wdesc,p.vurl,
+               COALESCE(p.viewcount,0) AS viewcount,COALESCE(p.votecount,0) AS votecount,p.wstatus,
+               DATE_FORMAT(p.cwtime,'%Y-%m-%dT%H:%i:%s+08:00') AS cwtime,
+               COALESCE(p.likep,0) AS likep,u.uname,u.avatar,c.pcname,
+               (SELECT COUNT(*) FROM liketable l
+                WHERE l.targetid=p.pid AND l.targettype='帖子') AS realLikeCount
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE p.wstatus='待审核'
+        ORDER BY p.pid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <update id="updatePending">
+        UPDATE pwork SET wstatus=#{status} WHERE pid=#{pid} AND wstatus='待审核'
+    </update>
+    <select id="findForUpdate" resultType="java.lang.String">
+        SELECT pid FROM pwork WHERE pid=#{pid} FOR UPDATE
+    </select>
+    <insert id="insertAudit">
+        INSERT INTO waudit (aid,pid,act,reason,uadmin,ct)
+        VALUES (#{aid},#{pid},#{act},#{reason,jdbcType=VARCHAR},#{uadmin},#{ct})
+    </insert>
+</mapper>

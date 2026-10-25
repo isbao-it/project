@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:include="common::title('作品审核')"></head>
+<body>
+<div class="layuimini-container">
+    <main class="layuimini-main">
+        <h1 style="font-size:22px;margin-bottom:12px;">待审核作品</h1>
+        <p style="margin-bottom:16px;">通过后作品将公开展示。驳回时请填写理由，作者可在我的作品中查看。</p>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+            <button id="refresh" type="button" class="layui-btn layui-btn-primary">刷新列表</button>
+            <label for="size">每页条数</label>
+            <select id="size" style="padding:8px;">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <p id="feedback" role="status" aria-live="polite" style="min-height:24px;margin-bottom:8px;"></p>
+        <div style="overflow-x:auto;">
+            <table class="layui-table" style="min-width:720px;">
+                <caption style="text-align:left;padding:8px 0;">当前状态为待审核的作品</caption>
+                <thead>
+                <tr><th scope="col">图片</th><th scope="col">作品与作者</th><th scope="col">提交时间</th><th scope="col">审核操作</th></tr>
+                </thead>
+                <tbody id="works"></tbody>
+            </table>
+        </div>
+        <nav aria-label="待审核列表分页" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <button id="previous" type="button" class="layui-btn layui-btn-primary">上一页</button>
+            <span id="pageInfo"></span>
+            <button id="next" type="button" class="layui-btn layui-btn-primary">下一页</button>
+        </nav>
+    </main>
+</div>
+<script th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
+<script>
+layui.use(['layer'], function() {
+    var layer = layui.layer;
+    // 入口只读取管理员 API 的冻结信封；作品文本始终作为文本节点呈现。
+    var page = 1;
+    var total = 0;
+    var busy = false;
+    var currentList = [];
+    var rejectDialog = null;
+    var works = document.getElementById('works');
+    var feedback = document.getElementById('feedback');
+    var sizeSelect = document.getElementById('size');
+    var previous = document.getElementById('previous');
+    var next = document.getElementById('next');
+    var refresh = document.getElementById('refresh');
+
+    function setBusy(value) {
+        busy = value;
+        refresh.disabled = value;
+        sizeSelect.disabled = value;
+        previous.disabled = value || page <= 1;
+        next.disabled = value || page * Number(sizeSelect.value) >= total;
+        works.querySelectorAll('button,textarea').forEach(function(control) { control.disabled = value; });
+        works.setAttribute('aria-busy', String(value));
+        if (rejectDialog !== null) {
+            var dialog = document.getElementById('layui-layer' + rejectDialog);
+            dialog.querySelector('textarea').disabled = value;
+            dialog.querySelectorAll('.layui-layer-btn a').forEach(function(button) {
+                button.setAttribute('aria-disabled', String(value));
+                button.style.pointerEvents = value ? 'none' : '';
+            });
+        }
+    }
+
+    async function request(url, method, body) {
+        var headers = {};
+        var token = localStorage.getItem('token');
+        if (token) headers.Authorization = 'Bearer ' + token;
+        if (body !== undefined) headers['Content-Type'] = 'application/json';
+        var response = await fetch(url, {
+            method: method,
+            headers: headers,
+            credentials: 'same-origin',
+            body: body === undefined ? undefined : JSON.stringify(body)
+        });
+        // 网关可能返回 HTML/空正文；解析失败仍保留 HTTP 状态，才能准确提示权限或冲突。
+        var json;
+        try { json = await response.json(); } catch (error) { json = null; }
+        if (!response.ok || !json || json.code !== 'ok') {
+            var error = new Error('请求失败，请稍后重试。');
+            error.status = response.status;
+            error.code = json && json.code;
+            throw error;
+        }
+        return json.data;
+    }
+
+    function showError(error) {
+        var messages = {
+            400: '输入不合法，请检查驳回理由后重试。',
+            401: '登录已失效，请重新登录后刷新。',
+            403: '当前账号没有管理员权限，请使用管理员账号登录。',
+            404: '作品已不存在，请刷新列表。',
+            409: '已被处理，请刷新。'
+        };
+        var codes = {unauthorized: 401, forbidden: 403, conflict: 409};
+        var status = messages[error.status] ? error.status : codes[error.code];
+        feedback.textContent = messages[status] || '请求失败，请稍后刷新重试。';
+        if (rejectDialog !== null) {
+            document.getElementById('rejectReasonError').textContent = feedback.textContent;
+        }
+        if (status === 401) {
+            var login = document.createElement('a');
+            login.href = '/login/page';
+            login.target = '_top';
+            login.textContent = ' 前往登录';
+            feedback.appendChild(login);
+        }
+    }
+
+    function cell(row, value) {
+        var td = document.createElement('td');
+        td.textContent = value == null ? '' : value;
+        row.appendChild(td);
+        return td;
+    }
+
+    function render(list) {
+        currentList = list;
+        works.textContent = '';
+        if (!list.length) {
+            var empty = document.createElement('tr');
+            var td = cell(empty, total ? '本页暂无待审核作品，请刷新列表。' : '暂无待审核作品');
+            td.colSpan = 4;
+            works.appendChild(empty);
+        }
+        list.forEach(function(work) {
+            var row = document.createElement('tr');
+            var imageCell = cell(row, '');
+            // 图片地址来自作品数据，只接受同源路径或 HTTP(S)，不构造 HTML。
+            try {
+                var imageUrl = new URL(work.vurl, location.origin);
+                if (imageUrl.protocol === 'https:' || imageUrl.protocol === 'http:') {
+                    var image = document.createElement('img');
+                    image.src = imageUrl.href;
+                    image.alt = work.wtitle || '待审核作品';
+                    image.loading = 'lazy';
+                    image.style.cssText = 'width:120px;height:90px;object-fit:contain;';
+                    imageCell.appendChild(image);
+                }
+            } catch (error) { imageCell.textContent = '图片地址无效'; }
+            var details = cell(row, '');
+            var title = document.createElement('strong');
+            title.textContent = work.wtitle || '未命名作品';
+            details.appendChild(title);
+            var author = document.createElement('p');
+            author.textContent = '作者：' + (work.uname || work.uid || '未知');
+            details.appendChild(author);
+            var description = document.createElement('p');
+            description.textContent = work.wdesc || '';
+            description.style.cssText = 'max-width:32ch;overflow-wrap:anywhere;white-space:pre-wrap;';
+            details.appendChild(description);
+            cell(row, work.cwtime);
+            var actions = cell(row, '');
+            ['approve', 'reject'].forEach(function(action) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'layui-btn layui-btn-sm' + (action === 'reject' ? ' layui-btn-danger' : '');
+                button.textContent = action === 'approve' ? '通过' : '驳回';
+                button.addEventListener('click', function() {
+                    if (action === 'reject') openReject(work.pid, button);
+                    else decide(work.pid, action);
+                });
+                actions.appendChild(button);
+            });
+            works.appendChild(row);
+        });
+        document.getElementById('pageInfo').textContent = '第 ' + page + ' 页，共 ' + total + ' 件待审核作品';
+    }
+
+    async function readPage(targetPage) {
+        var requestedPage = targetPage || page;
+        var data = await request('/admin/work/pending?page=' + requestedPage + '&size=' + sizeSelect.value, 'GET');
+        // 审核完末页最后一项时退回仍有数据的页，避免留在空页。
+        if (requestedPage > 1 && !data.list.length) {
+            requestedPage = Math.max(1, Math.ceil(data.total / Number(sizeSelect.value)));
+            data = await request('/admin/work/pending?page=' + requestedPage + '&size=' + sizeSelect.value, 'GET');
+        }
+        page = requestedPage;
+        total = data.total;
+        render(data.list);
+    }
+
+    async function load(targetPage) {
+        if (busy) return;
+        setBusy(true);
+        feedback.textContent = '正在加载待审核作品…';
+        try {
+            await readPage(targetPage);
+            feedback.textContent = '';
+        } catch (error) { showError(error); }
+        finally { setBusy(false); }
+    }
+
+    function openReject(pid, trigger) {
+        if (busy || rejectDialog !== null) return;
+        var content = document.createElement('div');
+        content.style.cssText = 'padding:20px;';
+        var label = document.createElement('label');
+        label.htmlFor = 'rejectReason';
+        label.textContent = '驳回理由（必填，1–200 字，不能全为空白）';
+        content.appendChild(label);
+        var reason = document.createElement('textarea');
+        reason.id = label.htmlFor;
+        reason.className = 'layui-textarea';
+        reason.rows = 5;
+        reason.required = true;
+        reason.style.cssText = 'margin-top:12px;';
+        content.appendChild(reason);
+        var errorText = document.createElement('p');
+        errorText.id = 'rejectReasonError';
+        errorText.setAttribute('role', 'alert');
+        errorText.style.cssText = 'color:#ff5722;min-height:24px;margin-top:8px;';
+        reason.setAttribute('aria-describedby', errorText.id);
+        content.appendChild(errorText);
+        // layui 2.5.5 用 wrap 包裹节点；内容须先挂到文档，否则只生成遮罩。
+        document.body.appendChild(content);
+        rejectDialog = layer.open({
+            type: 1,
+            title: '驳回作品',
+            area: [Math.min(480, window.innerWidth - 32) + 'px', 'auto'],
+            content: layui.jquery(content),
+            btn: ['确认驳回', '取消'],
+            shadeClose: false,
+            success: function(dialog) {
+                dialog.attr('role', 'dialog').attr('aria-modal', 'true').attr('aria-label', '驳回作品');
+                reason.focus();
+            },
+            yes: function() {
+                if (busy) return;
+                // 冻结 §1.4 按 Unicode 字符数校验，只检查空白，不裁剪将要保存的原文。
+                if (!reason.value.trim() || Array.from(reason.value).length > 200) {
+                    errorText.textContent = '驳回理由必须为 1–200 字，不能全为空白。';
+                    reason.setAttribute('aria-invalid', 'true');
+                    reason.focus();
+                    return;
+                }
+                reason.removeAttribute('aria-invalid');
+                errorText.textContent = '';
+                decide(pid, 'reject', reason.value);
+            },
+            btn2: function() { return !busy; },
+            cancel: function() { return !busy; },
+            end: function() {
+                rejectDialog = null;
+                content.remove();
+                if (trigger.isConnected) trigger.focus();
+            }
+        });
+    }
+
+    async function decide(pid, action, reason) {
+        if (busy) return;
+        setBusy(true);
+        feedback.textContent = '正在提交审核…';
+        try {
+            await request('/admin/work/' + encodeURIComponent(pid) + '/' + action, 'PUT',
+                action === 'reject' ? {reason: reason} : undefined);
+            if (rejectDialog !== null) layer.close(rejectDialog);
+            // 审核和刷新是两个请求：审核成功立即移除，刷新失败也不能让用户重复提交。
+            total = Math.max(0, total - 1);
+            render(currentList.filter(function(work) { return work.pid !== pid; }));
+            setBusy(true);
+            feedback.textContent = '审核已保存，正在刷新列表…';
+            try {
+                await readPage();
+                feedback.textContent = '审核已保存，列表已刷新。';
+            } catch (error) {
+                showError(error);
+                feedback.prepend('审核已保存，但列表刷新失败。');
+            }
+        } catch (error) { showError(error); }
+        finally { setBusy(false); }
+    }
+
+    refresh.addEventListener('click', function() { load(); });
+    sizeSelect.addEventListener('change', function() { load(1); });
+    previous.addEventListener('click', function() { if (page > 1) load(page - 1); });
+    next.addEventListener('click', function() { if (page * Number(sizeSelect.value) < total) load(page + 1); });
+    load();
+});
+</script>
+</body>
+</html>

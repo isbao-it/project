@@ -1,0 +1,32 @@
+/* 固定资料头与 mine 相同的内容区滚动布局，避免头部遮挡卡片。 */
+page { height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); color: var(--ink); }
+.header-area { flex: none; background: var(--card); }
+.topbar { display: flex; align-items: center; height: 88rpx; padding: 0 28rpx; }
+.back { width: 80rpx; line-height: 80rpx; font-size: 56rpx; color: var(--ink); }
+.profile-card { margin: 0 28rpx; padding: 28rpx 0; box-shadow: none; }
+.profile-top { display: flex; align-items: center; gap: 20rpx; }
+.profile-avatar { width: 128rpx; height: 128rpx; border-radius: 50%; background: var(--pink-soft); flex: none; }
+.profile-text { flex: 1; min-width: 0; }
+.profile-name { display: block; font-size: 34rpx; font-weight: 700; overflow-wrap: break-word; }
+.profile-bio { display: block; margin-top: 12rpx; font-size: 24rpx; color: var(--ink-3); overflow-wrap: break-word; }
+.follow { flex: none; padding: 12rpx 24rpx; border: 1rpx solid var(--pink); border-radius: 44rpx; font-size: 26rpx; color: var(--pink); background: var(--card); }
+.followed { background: var(--pink-soft); }
+.disabled { opacity: .5; }
+.stats { display: flex; margin-top: 24rpx; }
+.stat { flex: 1; text-align: center; border-left: 1rpx solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat-number { display: block; font-size: 32rpx; font-weight: 700; }
+.stat-label { display: block; margin-top: 6rpx; font-size: 22rpx; color: var(--ink-3); }
+.me-tabs { display: flex; border-bottom: 1rpx solid var(--line); }
+.me-tab { flex: 1; text-align: center; padding: 16rpx 0; font-size: 28rpx; line-height: 1.4; color: var(--ink-2); }
+.me-tab.on { position: relative; color: var(--pink); font-weight: 700; }
+.me-tab.on::after { content: ""; position: absolute; left: 50%; bottom: -4rpx; transform: translateX(-50%); width: 32rpx; height: 6rpx; border-radius: 4rpx; background: var(--pink); }
+.content { flex: 1; min-height: 0; }
+.content-inner { padding: 24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom)); }
+.work-card { position: relative; display: flex; align-items: flex-start; padding: 24rpx; margin-bottom: 20rpx; }
+.work-image { width: 160rpx; height: 160rpx; border-radius: 16rpx; background: var(--bg); flex-shrink: 0; }
+.work-info { flex: 1; min-width: 0; margin-left: 24rpx; }
+.work-title { display: block; margin-bottom: 16rpx; font-size: 30rpx; overflow-wrap: break-word; }
+.work-status { font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 32rpx; color: var(--ink-2); background: var(--bg); }
+.empty-tip, .loading-tip { text-align: center; padding: 40rpx 16rpx; color: var(--ink-3); font-size: 28rpx; }
+.retry-btn { margin-top: 20rpx; padding: 12rpx; border-radius: 44rpx; border: 1rpx solid var(--line); color: var(--ink-2); background: var(--card); }

@@ -1,0 +1,26 @@
+page { background: var(--bg, #F6F7F8); color: var(--ink, #18191C); }
+.edit-header { background: var(--card, #FFFFFF); border-bottom: 1rpx solid var(--line, #EDEFF2); }
+.edit-nav { position: relative; display: flex; align-items: center; justify-content: center; height: 96rpx; }
+.edit-heading { font-size: 32rpx; font-weight: 700; }
+.edit-back { position: absolute; left: 16rpx; top: 0; width: 80rpx; height: 96rpx; margin: 0; padding: 0; background: transparent; color: var(--ink, #18191C); font-size: 56rpx; line-height: 88rpx; }
+.edit-back::after, .category-pill::after, .save-button::after, .category-retry::after { border: 0; }
+/* 为固定保存栏预留高度和安全区，末项分类仍能完整滚入视口。 */
+.edit-form { padding: 28rpx 28rpx calc(160rpx + env(safe-area-inset-bottom)); }
+.edit-cover { display: block; width: 100%; height: 320rpx; border-radius: 24rpx; background: var(--line, #EDEFF2); }
+.cover-hint { display: block; margin-top: 12rpx; color: var(--ink-3, #9499A0); font-size: 22rpx; text-align: center; }
+.edit-field { margin-top: 32rpx; }
+.field-label { display: block; margin-bottom: 16rpx; font-size: 28rpx; font-weight: 700; }
+.title-input, .desc-input { box-sizing: border-box; width: 100%; padding: 24rpx; border-radius: 20rpx; background: var(--card, #FFFFFF); color: var(--ink, #18191C); font-size: 28rpx; }
+.title-input { height: 88rpx; }
+.desc-input { height: 224rpx; line-height: 1.6; }
+.edit-placeholder { color: var(--ink-3, #9499A0); }
+.category-scroll { width: 100%; white-space: nowrap; }
+.category-pill { display: inline-block; margin: 0 16rpx 0 0; padding: 12rpx 28rpx; border-radius: 40rpx; background: var(--card, #FFFFFF); color: var(--ink-2, #61666D); font-size: 26rpx; line-height: 1.5; vertical-align: top; }
+.category-pill.selected { background: var(--pink-soft, #FFE8EF); color: var(--pink, #FB7299); }
+.category-pill[disabled] { opacity: .6; }
+.category-pill.selected[disabled] { background: var(--pink-soft, #FFE8EF); color: var(--pink, #FB7299); }
+.category-state, .edit-state { padding: 32rpx 16rpx; color: var(--ink-3, #9499A0); font-size: 26rpx; text-align: center; }
+.category-retry { margin-top: 16rpx; background: var(--card, #FFFFFF); color: var(--pink, #FB7299); font-size: 26rpx; }
+.save-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 80; padding: 20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid var(--line, #EDEFF2); background: var(--card, #FFFFFF); }
+.save-button { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 0; border-radius: 44rpx; background: var(--pink, #FB7299); color: var(--card, #FFFFFF); font-size: 30rpx; font-weight: 700; }
+.save-button[disabled] { opacity: .6; background: var(--pink, #FB7299); color: var(--card, #FFFFFF); }

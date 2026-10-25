@@ -1,0 +1,55 @@
+# ── 构建产物 ──
+Backend/target/
+*.class
+*.war
+
+# ── 本地依赖缓存（不是源码，几百 MB）──
+Backend/springbootMaven/.m2/
+
+# ── 运行期上传（用户头像等，不入库）──
+Backend/uploads/
+
+# ── IDE ──
+.idea/
+*.iml
+.vscode/
+
+# ── Python（仓库里的脚本）──
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── Node / 小程序 ──
+node_modules/
+dist/
+miniprogram_npm/
+
+# ── 日志与临时 ──
+*.log
+logs/
+tmp/
+
+# ── 系统 ──
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ── 密钥与本地配置 ──
+.env
+*.local
+application-local.yml
+application-local.properties
+
+# ── 学校内部资料（"勿外传"，禁入库/禁推送）──
+参考模板/
+
+# ── 迁移备份含真实手机号（禁入库）──
+db/migration/backup_*.sql
+
+# ── 本地复跑产物（含库 dump，禁入库）──
+db/_Outputs/
+_Outputs/待审核/*/local/
+
+# Maven 生成的 classpath 清单（本地调试用）
+Backend/cp.txt

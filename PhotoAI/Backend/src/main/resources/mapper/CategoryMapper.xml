@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.CategoryMapper">
+    <resultMap id="Category" type="java.util.LinkedHashMap">
+        <id column="pcid" property="pcid" javaType="java.lang.String"/>
+        <result column="pcname" property="pcname" javaType="java.lang.String"/>
+        <result column="count" property="count" javaType="java.lang.Long"/>
+    </resultMap>
+    <select id="list" resultMap="Category">
+        SELECT c.pcid,c.pcname,COUNT(p.pid) AS count
+        FROM pclist c LEFT JOIN pwork p ON p.pcid=c.pcid AND p.wstatus='展示'
+        GROUP BY c.pcid,c.pcname,c.sort
+        ORDER BY c.sort ASC,c.pcid ASC
+    </select>
+</mapper>

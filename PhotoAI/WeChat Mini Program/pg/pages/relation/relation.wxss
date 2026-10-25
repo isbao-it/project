@@ -1,0 +1,39 @@
+page { background: var(--bg); color: var(--ink); padding-bottom: env(safe-area-inset-bottom); }
+.relation-header { position: sticky; top: 0; z-index: 2; background: var(--card); border-bottom: 1rpx solid var(--line); }
+.relation-nav { position: relative; display: flex; align-items: center; height: 88rpx; padding: 0 24rpx; }
+/* 返回入口固定为圆形且不参与拉伸，避免沿用默认按钮产生长条阴影。 */
+.relation-back {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 56rpx;
+  height: 56rpx;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 48rpx;
+  line-height: 1;
+}
+.pressed { opacity: .6; }
+.relation-title { position: absolute; left: 100rpx; right: 100rpx; text-align: center; font-size: 32rpx; font-weight: 700; color: var(--ink); }
+.relation-list { background: var(--card); }
+.relation-row { position: relative; display: flex; align-items: center; gap: 24rpx; padding: 24rpx; border-bottom: 1rpx solid var(--line); }
+.relation-avatar { display: block; flex: none; width: 80rpx; height: 80rpx; border-radius: 50%; }
+.avatar-placeholder { background: linear-gradient(135deg, var(--pink-soft), var(--pink)); }
+.relation-info { flex: 1; min-width: 0; }
+.relation-info-removable { padding-right: 112rpx; }
+.relation-remove { position: absolute; right: 24rpx; top: 50%; transform: translateY(-50%); font-size: 22rpx; color: var(--ink-3); padding: 8rpx 16rpx; border: 1rpx solid var(--line); border-radius: 16rpx; }
+.relation-name, .relation-bio { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.relation-name { font-size: 28rpx; color: var(--ink); }
+.relation-bio { margin-top: 8rpx; font-size: 22rpx; color: var(--ink-3); }
+.relation-state { padding: 40rpx 24rpx; text-align: center; font-size: 28rpx; color: var(--ink-3); }
+.relation-retry { margin-top: 20rpx; border-radius: 44rpx; font-size: 28rpx; }
+.relation-retry::after { border: 0; }

@@ -1,0 +1,15 @@
+<view class="login-container">
+  <view class="login-card">
+    <view class="login-header">
+      <text class="login-title">摄影作品交流平台</text>
+      <text class="login-subtitle">浏览摄影作品，记录创作灵感</text>
+    </view>
+    <button class="login-btn" bindtap="doLogin" disabled="{{submitting}}" loading="{{submitting}}">
+      {{submitting ? '登录中...' : '微信登录'}}
+    </button>
+    <button class="guest-btn" bindtap="guestBrowse" disabled="{{submitting}}">游客浏览</button>
+    <view class="login-footer">
+      <text class="footer-text">游客可浏览首页，登录后可进入关注、发布和我的</text>
+    </view>
+  </view>
+</view>

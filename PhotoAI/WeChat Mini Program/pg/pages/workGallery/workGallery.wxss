@@ -1,0 +1,236 @@
+.gallery-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink, #18191C);
+  background: var(--bg, #F6F7F8);
+}
+
+.gallery-swiper {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gallery-scroll {
+  height: 100%;
+}
+
+.gallery-container {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 列表只在各自 scroll-view 内滚动，头部和排序行不参与收缩。 */
+.gallery-sticky {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--card, #FFFFFF);
+}
+
+/* 状态栏和胶囊的 px 实测值由节点内联样式提供，避免固定机型尺寸。 */
+.gallery-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 8rpx 28rpx 20rpx;
+  background: var(--card, #FFFFFF);
+}
+
+.gallery-logo {
+  flex: none;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--pink, #FB7299);
+  letter-spacing: 1rpx;
+}
+
+.gallery-search {
+  flex: 1;
+  min-width: 0;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding-left: 24rpx;
+  border-radius: 30rpx;
+  background: var(--bg, #F6F7F8);
+  color: var(--ink-3, #9499A0);
+  font-size: 24rpx;
+  box-sizing: border-box;
+}
+
+.search-placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery-tabs {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16rpx 28rpx 0;
+  background: var(--card, #FFFFFF);
+  overflow: visible;
+}
+
+.gallery-tabs .gallery-tab {
+  flex: 1;
+  margin: 0;
+  padding: 8rpx 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: center;
+  font-size: 28rpx;
+  line-height: 1.4;
+  color: var(--ink-2, #61666D);
+  overflow: visible;
+}
+
+.gallery-tab::after {
+  border: 0;
+}
+
+.gallery-tab.on {
+  position: relative;
+  color: var(--pink, #FB7299);
+  font-weight: 700;
+}
+
+.gallery-tab.on::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4rpx;
+  transform: translateX(-50%);
+  width: 32rpx;
+  height: 6rpx;
+  border-radius: 4rpx;
+  top: auto;
+  right: auto;
+  background: var(--pink, #FB7299);
+}
+
+.gallery-login {
+  padding: 16rpx 28rpx;
+  color: var(--ink-3, #9499A0);
+  font-size: 24rpx;
+}
+
+.gallery-login button {
+  margin: 0;
+}
+
+.gallery-container .pa-btn-ghost {
+  background: var(--card, #FFFFFF);
+  border: 1rpx solid var(--line, #EDEFF2);
+  color: var(--ink-2, #61666D);
+}
+
+.gallery-container .pa-btn-ghost::after {
+  border: 0;
+}
+
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 16rpx 20rpx 156rpx;
+}
+
+.gallery-card {
+  width: calc(50% - 8rpx);
+  align-self: flex-start;
+  background: var(--card, #FFFFFF);
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 6rpx var(--gallery-card-shadow, rgba(0, 0, 0, .05));
+  margin-bottom: 16rpx;
+  overflow: hidden;
+}
+
+.gallery-cover {
+  width: 100%;
+  position: relative;
+}
+
+.gallery-img {
+  display: block;
+  width: 100%;
+  background: var(--bg, #F6F7F8);
+}
+
+.card-views {
+  position: absolute;
+  left: 16rpx;
+  bottom: 12rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gallery-category,
+.gallery-likes {
+  color: var(--card, #FFFFFF);
+  background: var(--gallery-tag-background, rgba(0, 0, 0, .42));
+}
+
+.gallery-category {
+  left: 12rpx;
+  top: 12rpx;
+}
+
+.gallery-likes {
+  right: 12rpx;
+  bottom: 12rpx;
+}
+
+.gallery-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 25rpx;
+  line-height: 1.35;
+  padding: 12rpx 14rpx 4rpx;
+}
+
+.gallery-meta {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 0 14rpx 14rpx;
+  font-size: 21rpx;
+  color: var(--ink-3, #9499A0);
+}
+
+.author-avatar {
+  flex: none;
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gallery-author-start, #DDE3EA), var(--gallery-author-end, #B9C2CC));
+}
+
+/* 无头像时的兜底：浅灰底圆，避免露出透明空块 */
+.author-avatar-empty {
+  background: var(--line);
+}
+
+.empty-tip,
+.loading-tip {
+  text-align: center;
+  padding: 40rpx 16rpx 156rpx;
+  color: var(--ink-3, #9499A0);
+  font-size: 28rpx;
+}
+
+.retry-btn {
+  margin-top: 20rpx;
+}

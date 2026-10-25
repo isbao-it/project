@@ -1,0 +1,16 @@
+<!-- 根据原有 selected 索引切换配色，导航事件与路径保持不变。 -->
+<view class="tab-bar">
+  <view
+    wx:for="{{list}}"
+    wx:key="pagePath"
+    class="tab-item {{selected === index ? 'tab-item-active' : ''}}"
+    data-index="{{index}}"
+    bindtap="switchTab"
+    aria-label="{{item.text}}"
+  >
+    <view class="tab-icon-wrap {{item.key === 'publish' ? 'tab-publish' : ''}}">
+      <view class="tab-icon tab-icon-{{item.key}}"></view>
+    </view>
+    <text wx:if="{{item.key !== 'publish'}}" class="tab-text">{{item.text}}</text>
+  </view>
+</view>

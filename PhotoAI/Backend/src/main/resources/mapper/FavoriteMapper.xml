@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.FavoriteMapper">
+    <select id="exists" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM favorite WHERE uid=#{uid} AND pid=#{pid})
+    </select>
+    <select id="displayed" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pwork WHERE pid=#{pid} AND wstatus='展示')
+    </select>
+    <insert id="insert">
+        INSERT INTO favorite (fid,uid,pid) VALUES (#{fid},#{uid},#{pid})
+    </insert>
+    <delete id="delete">
+        DELETE FROM favorite WHERE uid=#{uid} AND pid=#{pid}
+    </delete>
+    <select id="ownedCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM favorite WHERE uid=#{uid} AND pid=#{pid}
+    </select>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM favorite WHERE pid=#{pid}
+    </select>
+    <sql id="MineFilter">
+        f.uid=#{uid} AND p.wstatus='展示'
+    </sql>
+    <select id="mineCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM favorite f JOIN pwork p ON p.pid=f.pid
+        WHERE <include refid="MineFilter"/>
+    </select>
+    <!-- 复用已冻结的十四字段与 Long 映射，不调用有浏览副作用的详情服务。 -->
+    <select id="mine" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM favorite f JOIN pwork p ON p.pid=f.pid
+        LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE <include refid="MineFilter"/>
+        ORDER BY f.ct DESC,f.fid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <!-- 列表与计数共用可见性条件；本人关掉公开后仍能读取自己的展示作品收藏。 -->
+    <sql id="HomeFilter">
+        f.uid=#{uid} AND p.wstatus='展示'
+        AND EXISTS(SELECT 1 FROM user owner WHERE owner.uid=f.uid
+                   AND (owner.vis_favorite=1 OR owner.uid=#{viewerUid}))
+    </sql>
+    <select id="homeCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM favorite f JOIN pwork p ON p.pid=f.pid
+        WHERE <include refid="HomeFilter"/>
+    </select>
+    <select id="homePage" resultMap="com.pg.mapper.WorkQueryMapper.Work">
+        SELECT <include refid="com.pg.mapper.WorkQueryMapper.Columns"/>
+        FROM favorite f JOIN pwork p ON p.pid=f.pid
+        LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE <include refid="HomeFilter"/>
+        ORDER BY f.ct DESC, f.fid ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+</mapper>

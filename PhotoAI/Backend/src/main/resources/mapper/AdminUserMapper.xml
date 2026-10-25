@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.AdminUserMapper">
+    <sql id="Keyword">
+        <if test="keyword != null and keyword != ''">
+            WHERE LOCATE(#{keyword},uname)>0
+        </if>
+    </sql>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user <include refid="Keyword"/>
+    </select>
+    <select id="page" resultType="java.util.LinkedHashMap">
+        SELECT uid,uname AS nickname,avatar,bio,role,status,pnum,
+               DATE_FORMAT(uct,'%Y-%m-%dT%H:%i:%s+08:00') AS createdAt
+        FROM user <include refid="Keyword"/>
+        ORDER BY uid ASC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <!-- 强制按主键顺序扫描共同集合；锁定读等待胜者提交后重查，不能用普通 COUNT 的旧快照。 -->
+    <select id="lockNormalAdmins" resultType="java.lang.String">
+        SELECT uid FROM user FORCE INDEX (PRIMARY)
+        WHERE role='管理员' AND status='正常' ORDER BY uid ASC FOR UPDATE
+    </select>
+    <select id="findForUpdate" resultType="java.util.LinkedHashMap">
+        SELECT uid,role,status FROM user WHERE uid=#{uid} FOR UPDATE
+    </select>
+    <select id="countWorks" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork WHERE uid=#{uid}
+    </select>
+    <update id="updateStatus">
+        UPDATE user SET status=#{status} WHERE uid=#{uid}
+    </update>
+    <delete id="delete">
+        DELETE FROM user WHERE uid=#{uid}
+    </delete>
+</mapper>

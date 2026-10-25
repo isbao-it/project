@@ -1,0 +1,29 @@
+<view class="relation-header" style="padding-top:{{statusBarH}}px">
+  <view class="relation-nav">
+    <view class="relation-back" bindtap="goBack" hover-class="pressed" aria-role="button" aria-label="返回">‹</view>
+    <text class="relation-title">{{title}}</text>
+  </view>
+</view>
+<view class="relation-list">
+  <view wx:for="{{list}}" wx:key="uid" class="relation-row" bindtap="goUser" data-uid="{{item.uid}}"
+        role="button" aria-label="查看{{item.nickname || '微信用户'}}的主页">
+    <image wx:if="{{item.avatarUrl}}" class="relation-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+    <view wx:else class="relation-avatar avatar-placeholder"></view>
+    <view class="relation-info {{type === 'followers' && !isOthers ? 'relation-info-removable' : ''}}">
+      <text class="relation-name">{{item.nickname || '微信用户'}}</text>
+      <text class="relation-bio">{{item.bio || '还没有填写简介'}}</text>
+    </view>
+    <view wx:if="{{type === 'followers' && !isOthers}}" class="relation-remove"
+          catchtap="removeFollower" data-uid="{{item.uid}}"
+          role="button" aria-label="移除粉丝{{item.nickname || '微信用户'}}">移除</view>
+  </view>
+</view>
+<view wx:if="{{unsupported}}" class="relation-state">获赞列表暂未开放</view>
+<view wx:elif="{{loading}}" class="relation-state">加载中...</view>
+<view wx:elif="{{forbidden}}" class="relation-state">该用户未公开此列表</view>
+<view wx:elif="{{error}}" class="relation-state">
+  加载失败
+  <button class="pa-btn-ghost relation-retry" bindtap="retry">重试</button>
+</view>
+<view wx:elif="{{list.length === 0}}" class="relation-state">{{type === 'followers' ? '还没有粉丝' : '还没有关注任何人'}}</view>
+<view wx:elif="{{noMore}}" class="relation-state">没有更多了</view>
