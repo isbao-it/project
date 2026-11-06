@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  管理台公共外壳：head / sidebar / topbar 三个 fragment。
+  页面各自 include 这三段，不再复制侧栏与顶栏，保证导航与激活态只有一处定义。
+-->
+<head th:fragment="head(title)">
+    <meta charset="utf-8">
+    <title th:text="${title}">管理台</title>
+    <meta name="viewport" content="width=1180">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="icon" th:href="@{/static/images/title.ico}">
+    <link rel="stylesheet" th:href="@{/static/admin/admin-shell.css(v=20261106b)}">
+    <script th:src="@{/static/admin/admin-api.js(v=20261106b)}"></script>
+</head>
+<body>
+
+<aside class="admin-side" th:fragment="sidebar(active)">
+    <div class="admin-logo">
+        <div class="mark">P</div>
+        <b>PhotoAI 管理台<span>ADMIN CONSOLE</span></b>
+    </div>
+    <nav class="admin-nav">
+        <div class="group">概览</div>
+        <a th:href="@{/page/admin/index}" th:classappend="${active == 'dash'} ? 'active' : ''">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            数据概览
+        </a>
+        <div class="group">内容</div>
+        <a th:href="@{/page/admin/audit}" th:classappend="${active == 'review'} ? 'active' : ''">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 5h16M4 12h10M4 19h7"/><path d="M17 14l2 2 3-3"/>
+            </svg>
+            作品审核<span class="count" id="navPendingCount" hidden>0</span>
+        </a>
+        <a th:href="@{/page/admin/works}" th:classappend="${active == 'works'} ? 'active' : ''">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/>
+                <path d="M4 18l5-5 4 4 3-2 4 3"/>
+            </svg>
+            作品管理
+        </a>
+        <div class="group">账号</div>
+        <a th:href="@{/page/admin/users}" th:classappend="${active == 'users'} ? 'active' : ''">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/>
+                <path d="M16 11a2.6 2.6 0 100-5.2"/><path d="M17.5 19c-.2-2-.9-3.5-2-4.5 2.6-.2 4.7 1.5 5.2 4.5"/>
+            </svg>
+            用户管理
+        </a>
+        <a th:href="@{/page/admin/appeals}" th:classappend="${active == 'appeal'} ? 'active' : ''">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 5h16v10H8l-4 4z"/><path d="M8 9h8M8 12h5"/>
+            </svg>
+            申诉处理<span class="count" id="navAppealCount" hidden>0</span>
+        </a>
+    </nav>
+    <div class="who">
+        <img id="whoAvatar" th:src="@{/static/images/avatar/admin.jpg}" alt="">
+        <div>
+            <div class="n" id="whoName">管理员</div>
+            <div class="r">管理员</div>
+        </div>
+        <button type="button" onclick="AdminApi.logout()">退出</button>
+    </div>
+</aside>
+
+<div th:fragment="topbar(title, crumb)">
+    <div class="admin-top">
+        <div>
+            <h1 th:text="${title}">页面</h1>
+            <div class="crumb" th:text="${crumb}">PhotoAI 管理台</div>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="iconbtn" title="刷新当前页" onclick="window.location.reload()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                <path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<p class="admin-feedback" id="admin-feedback" role="status" aria-live="polite" th:fragment="feedback"></p>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+出卡任务：PhotoAI 管理端 V1（C 范围）——出 3 张执行卡 + 3 张测试卡。
+
+必读（只读，不粘贴全文）：
+- docs/需求与范围确认.md（F-11 后台管理端）
+- docs/接口冻结_v1.md（§1.1 分页、§1.4 #14–#19 已冻结，§2 信封与错误码、§6 U5/U7/U8、§七命名与风格）
+- docs/代码风格.md、docs/岗位分工.md
+- docs/cards/04_后台审核_执行卡.md 与 04_后台审核_测试卡.md（卡面体例范本）
+- docs/preview/admin_mockup.html（用户已确认的视觉稿，用它当页面验收基准）
+- 现有实现：Backend/src/main/resources/templates/admin/{index,audit}.html、user/userList.html、pwork/pworkList.html、view/workDetailList.html
+- 现有后端：controller/{AdminWorkController,AdminUserController,PworkController}.java、service/{AuditService,AdminUserService}.java
+
+三卡拆分（每卡执行+测试成对）：
+- M1 外壳与概览：侧栏+顶栏统一外壳（去掉 iframe 拼 tab），GET /admin/stats 只读聚合（待审核数、今日通过数、用户总数、作品总数与四状态分布、分类分布、最近 3 条待审）；页面 /page/admin/index 重做，子页共用同一套壳（可用同一模板 + 视图切换，禁 iframe）
+- M2 作品审核升级：待审队列勾选批量通过/驳回（前端循环调已冻结的 #15/#16，不新增批量接口）、右侧大图+EXIF+作者信息、批量结果逐件反馈
+- M3 作品管理与用户管理：新增管理员作品查询接口（任意状态 + 关键字/分类筛选 + 分页），管理员改非待审作品状态（先裁决现有 PUT /pwork/{pid}/status 是否允许管理员操作他人作品，允许则复用，不允许才新增 /admin/work/{pid}/status 并写契约增补）；用户管理页接 /admin/user/list|status|DELETE，自己/最后管理员/有作品三项保护在按钮层置灰 + 409 兜底
+
+已由用户拍板的决策（写进卡，不要再问）：
+1. 批量操作 = 前端逐件循环调用，不新增批量接口；逐件写 waudit，失败项汇总提示
+2. 概览统计 = 新增一个只读 GET /admin/stats，前端不许拉多个分页接口自己聚合
+3. 不做：CSV 导出、媒体自动审核、Redis 缓存统计、权限角色新增
+4. 页面验收基准 = docs/preview/admin_mockup.html，配色沿用小程序暖橙（#FF6B35/#FFF0EA/#FFB020/#1A1410/#5C534D/#9A8F88/#FAF8F7/#EDE8E5）
+
+必须裁决并写进卡的高风险点（不许含糊）：
+- GET /admin/stats 的字段名、口径（今日按服务器时区当天 0 点起）、是否要索引/是否加缓存（默认不加）
+- 作品管理查询接口的精确路径、参数名与非法值语义（status 非四状态枚举 → 400，不自动降级）
+- 用户列表是否加 workCount：新字段能不能加，先核 AuditApiTest 是否有 AdminUser 严格字段集合断言；断言存在则改为不显示作品数并在卡里写明原因
+- 管理页统一 401/403 处理：API 仍返 JSON 不重定向，页面 302 规则不变
+- 三卡之间文件写白名单不重叠；同一文件（如 index.html）只许一张卡改
+
+卡面硬常量：执行卡 ≤8,000 字符、测试卡 ≤6,000、合计 ≤14,000；行为组 ≤8；枚举/字段名/错误码/阈值必须钉死；实现卡输入=全仓只读，白名单只约束写入。每卡必须写：目标、依赖、可写白名单（逐文件，含既有文件可改范围）、接口契约、GWT 验收条目、禁止行为、真跑命令（JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504，mvn8 -B -ntp）。
+本次只出卡：不写实现、不写测试、不改任何现有文件、不执行 git。产出落到 docs/cards/ 下，命名 AD1_管理端外壳与概览_执行卡.md / _测试卡.md，AD2_审核页升级_*、AD3_作品与用户管理_*。最后给一份 ≤40 行的出卡说明：三卡边界、文件归属、新增契约结论、你裁决过的每个高风险点及理由。

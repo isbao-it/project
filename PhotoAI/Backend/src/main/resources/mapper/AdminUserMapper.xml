@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pg.mapper.AdminUserMapper">
+    <select id="countNormalAdmins" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user WHERE role='管理员' AND status='正常'
+    </select>
+    <select id="guardTargets" resultType="java.util.LinkedHashMap">
+        SELECT u.uid,u.role,u.status,COUNT(p.pid) AS workCount
+        FROM user u LEFT JOIN pwork p ON p.uid=u.uid
+        WHERE u.uid IN
+        <foreach collection="uids" item="uid" open="(" separator="," close=")">#{uid}</foreach>
+        GROUP BY u.uid,u.role,u.status
+    </select>
     <sql id="Keyword">
         <if test="keyword != null and keyword != ''">
             WHERE LOCATE(#{keyword},uname)>0
@@ -26,10 +36,59 @@
     <select id="countWorks" resultType="java.lang.Long">
         SELECT COUNT(*) FROM pwork WHERE uid=#{uid}
     </select>
+    <select id="lockWorkIds" resultType="java.lang.String">
+        SELECT pid FROM pwork WHERE uid=#{uid} ORDER BY pid ASC FOR UPDATE
+    </select>
     <update id="updateStatus">
         UPDATE user SET status=#{status} WHERE uid=#{uid}
     </update>
+    <update id="hideVisibleWorks">
+        UPDATE pwork SET wstatus='隐藏' WHERE uid=#{uid} AND wstatus='展示'
+    </update>
     <delete id="delete">
         DELETE FROM user WHERE uid=#{uid}
+    </delete>
+    <!-- 作品须留到从属表清完后再删；所有值绑定参数，严格使用 §5.1 的范围。 -->
+    <delete id="deleteComments">
+        DELETE FROM comment WHERE uid=#{uid} OR pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteFavorites">
+        DELETE FROM favorite WHERE uid=#{uid} OR pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteLikes">
+        DELETE FROM liketable WHERE uid=#{uid}
+            OR (targettype='帖子' AND targetid IN (SELECT pid FROM pwork WHERE uid=#{uid}))
+    </delete>
+    <delete id="deleteVotes">
+        <!-- 不能子查询 pwork：vote 删除触发器会回写该表；空作品列表只清用户发起的投票。 -->
+        DELETE FROM vote WHERE uid=#{uid}
+        <if test="workIds != null and !workIds.isEmpty()">
+            OR pid IN
+            <foreach collection="workIds" item="pid" open="(" separator="," close=")">#{pid}</foreach>
+        </if>
+    </delete>
+    <delete id="deleteWorkCategories">
+        DELETE FROM pcatogory WHERE pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteWorkEmbeddings">
+        DELETE FROM work_embedding WHERE pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteWorkExif">
+        DELETE FROM work_exif WHERE pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteAudits">
+        DELETE FROM waudit WHERE uadmin=#{uid} OR pid IN (SELECT pid FROM pwork WHERE uid=#{uid})
+    </delete>
+    <delete id="deleteFollows">
+        DELETE FROM follow WHERE uid=#{uid} OR tuid=#{uid}
+    </delete>
+    <delete id="deleteWorks">
+        DELETE FROM pwork WHERE uid=#{uid}
+    </delete>
+    <delete id="deleteGifts">
+        DELETE FROM gift WHERE uid=#{uid}
+    </delete>
+    <delete id="deleteOrders">
+        DELETE FROM orderinfo WHERE uid=#{uid}
     </delete>
 </mapper>

@@ -77,7 +77,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
         boolean anonymous = "/error".equals(uri)
                 || ("POST".equals(request.getMethod())
-                    && ("/auth/wxlogin".equals(uri) || "/user/login".equals(uri)));
+                    && ("/auth/wxlogin".equals(uri) || "/user/login".equals(uri) || "/appeal".equals(uri)));
         if ("GET".equals(request.getMethod())) {
             anonymous = anonymous || PUBLIC_PATHS.contains(uri) || matchesPrefix(uri, "/static")
                     || matchesPrefix(uri, "/uploads");

@@ -1,0 +1,7 @@
+出卡任务：只写两个新文件 docs/cards/04_后台审核_执行卡.md 与 docs/cards/04_后台审核_测试卡.md（禁改现有文件、禁写代码、禁 git）。
+依据：docs/接口冻结_v1.md v1.1 §1.4（后台审核与用户管理接口 #14-#19）、§2 共享契约、§3.2/§3.3 文件所有权、§3.4 内部接口、§6 U5/U7、§七 Java 代码风格；库结构：waudit(aid,pid,act,reason,uadmin,ct)、pwork.wstatus(待审核/展示/隐藏/已驳回)、user.status(正常/禁用)。
+卡面必须含：
+(A) 岗位隔离——测试卡给 qoder（只写 src/test/**），执行卡给 codex（只读测试改 src/main/**），测试先冻结；
+(B) 冻结断言逐条 T04-xx：待审核列表分页（只出 wstatus=待审核）、审核通过（→展示，写 waudit act=pass）、审核驳回（→已驳回，必须带 reason，写 waudit act=reject）、审核幂等/重复审核冲突（409）、非管理员访问 403、未登录 401、管理员用户列表（pnum 仅管理员可见完整号、其它脱敏）、禁用/启用用户、禁止删除或禁用自己、最后一个管理员受保护（409）、被驳回作品作者在 /pwork/mine 能看到最近一次 reason；
+(C) 执行卡：目标、依赖（卡01 鉴权、卡03 发布与 wstatus、卡04 自带 waudit）、可写白名单逐文件（AdminWorkController/AdminUserController + AuditService/AdminUserService 及 impl + AuditMapper/AdminUserMapper(.java/.xml) + templates/admin/audit.html + PageController 仅新增 auditPage 映射 + templates/admin/index.html 仅加审核菜单项）、禁止行为（不得改 PworkController/AuthInterceptor/MsgSecCheck/既有测试、不得实现分类收藏关注）、迁移号 V005（waudit 表 V002 已建，若无需 DDL 不要造空文件）、交回格式、关闭检查；
+(D) 与已合入卡的边界：审核状态变更只能走 AuditMapper 更新 pwork.wstatus，不得复用 PworkServiceImpl 的发布方法。

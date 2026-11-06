@@ -12,4 +12,17 @@
         GROUP BY c.pcid,c.pcname,c.sort
         ORDER BY c.sort ASC,c.pcid ASC
     </select>
+    <select id="lockCategories" resultType="java.lang.String">
+        SELECT pcid FROM pclist ORDER BY pcid FOR UPDATE
+    </select>
+    <select id="countName" resultType="long">
+        SELECT COUNT(*) FROM pclist WHERE BINARY pcname = BINARY #{pcname}
+    </select>
+    <insert id="insert">
+        INSERT INTO pclist (pcid,pcname,cds,sort)
+        SELECT #{pcid},#{pcname},#{cds,jdbcType=VARCHAR},COALESCE(MAX(sort),0)+10 FROM pclist
+    </insert>
+    <select id="sortOf" resultType="java.lang.Long">
+        SELECT sort FROM pclist WHERE pcid=#{pcid}
+    </select>
 </mapper>

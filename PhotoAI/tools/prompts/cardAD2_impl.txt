@@ -1,0 +1,33 @@
+实现两处后端增量（管理端 v2）。必读先：
+- docs/接口增补_ADMIN.md §5 与 §5.1（契约权威，字段名/表清单/顺序逐字执行）
+- Backend/src/test/java/com/pg/AdminApiTest.java（**冻结测试，只读，不许改**）
+- Backend/src/main/java/com/pg/controller/AdminUserController.java
+- Backend/src/main/java/com/pg/service/AdminUserService.java + impl/AdminUserServiceImpl.java
+- Backend/src/main/java/com/pg/mapper/AdminUserMapper.java + resources/mapper/AdminUserMapper.xml
+- 参考既有保护事务写法（同类中的 changeStatus / delete）
+
+冻结事实：测试 SHA256=50a72999359daef60dce55a0848d4b8c982bf624a7f882d165a1896891f30e38；当前红态 29 跑 / 3 失败 / 0 error，失败的正是下面两件事没做。目标：让这 29 条全绿，不许改测试、不许 skip、不许特判。
+
+任务 1：GET /admin/user/guards 每项增加 workCount
+- 每项键集合变成六个：uid, canDisable, canDelete, disableReason, deleteReason, workCount（整数，非负）
+- workCount = 该用户名下四状态作品总数，与查询同一次只读快照；不要逐行 N+1
+- 判定优先级仍是 self > last_admin > has_works；有作品时 canDelete=false/deleteReason=has_works
+- **不要**给 /admin/user/list 的 AdminUser 加字段（AuditApiTest 严格八键）
+
+任务 2：DELETE /admin/user/{uid} 支持可选级联
+- 新增查询参数 cascade，**只认字面量 "true"**；省略/false/1/其它值一律按 v1（有作品 409），不 trim、不转换
+- cascade=true 时在同一事务内按契约 §5.1 的 11 张表顺序显式删除（全部按 pid/uid 条件），完成后返回 data 恰 {uid, deletedWorks}，deletedWorks 是实际删除的 pwork 行数
+- 不带 cascade 且无作品时也要返回 {uid, deletedWorks:0}（v1 现在返回 data=null，测试要求改）
+- 仍禁删自己 403、最后正常管理员 409、合法不存在 404；任一语句失败整笔回滚
+- **业务库没有外键**（测试库有 user RESTRICT / pwork CASCADE），所以必须显式按顺序删，不能依赖 ON DELETE CASCADE
+
+硬约束：只改 AdminUserController/Service/Impl/Mapper/XML 五个文件；不碰模板、不碰其它 Controller、不改 AuditService、不加依赖、不改 POM、不执行 git。Java 8；中文注释 + Javadoc；复杂点写"为什么"。产出 UTF-8 无 BOM。
+
+真跑：
+export JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504; export PATH="$JAVA_HOME/bin:$PATH"
+export HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 NO_PROXY=localhost,127.0.0.1
+cd "C:/work/dev/projects/PhotoAI Hub/Backend"
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminApiTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AuditApiTest test
+
+失败先归因（实现缺口 / 测试缺陷 / 环境），Errors>0 先修自己；不许改断言求绿。交回：改动文件、定向结果、两条命令的 Tests run/Failures/Errors、未验证项、你删了哪 11 张表的哪些行（列个清单）。

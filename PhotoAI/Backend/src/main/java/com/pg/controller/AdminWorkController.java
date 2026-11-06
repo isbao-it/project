@@ -2,6 +2,7 @@ package com.pg.controller;
 
 import com.pg.common.RequiresRole;
 import com.pg.entity.AjaxResult;
+import com.pg.service.AdminWorkService;
 import com.pg.service.AuditService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,10 +21,32 @@ import java.util.Map;
 @RequiresRole("管理员")
 public class AdminWorkController {
     private final AuditService auditService;
+    private final AdminWorkService adminWorkService;
 
-    /** @param auditService 独立审核事务服务 */
-    public AdminWorkController(AuditService auditService) {
+    /** @param auditService 独立审核事务服务 @param adminWorkService 管理员作品查询与状态服务 */
+    public AdminWorkController(AuditService auditService, AdminWorkService adminWorkService) {
         this.auditService = auditService;
+        this.adminWorkService = adminWorkService;
+    }
+
+    /** @param parameters 原始筛选与分页参数 @return 作品列表及同条件总数信封 */
+    @GetMapping("/list")
+    public AjaxResult list(@RequestParam Map<String, String> parameters) {
+        return AjaxResult.success(adminWorkService.list(parameters));
+    }
+
+    /** @param pid 作品编号 @return 任意状态的作品、摄影参数与作者投影信封 */
+    @GetMapping("/{pid}")
+    public AjaxResult detail(@PathVariable String pid) {
+        return AjaxResult.success(adminWorkService.detail(pid));
+    }
+
+    /** @param pid 作品编号 @param body JSON 状态对象 @param request 已验证身份 @return 实际状态信封 */
+    @PutMapping("/{pid}/status")
+    public AjaxResult status(@PathVariable String pid, @RequestBody Map<String, Object> body,
+                             HttpServletRequest request) {
+        return AjaxResult.success(adminWorkService.changeStatus(pid, body.get("status"),
+                (String) request.getAttribute("uid")));
     }
 
     /**

@@ -1,75 +1,106 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:include="common::title('管理后台')"></head>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/layout :: head('数据概览')"></head>
 <body>
-<!-- 顶部导航栏 -->
-<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 20px; background:#fff; border-bottom:1px solid #eee; margin-bottom:8px;">
-    <span>🔧 管理后台 — 欢迎，<strong id="displayName" style="color:#dc2626;"></strong></span>
-    <button class="layui-btn layui-btn-sm layui-btn-warm" onclick="doLogout()">
-        <i class="layui-icon layui-icon-logout"></i> 退出登录
-    </button>
-</div>
-<div class="layuimini-container">
-    <div class="layuimini-main">
-        <div class="layui-tab" lay-filter="adminTab">
-            <ul class="layui-tab-title">
-                <li class="layui-this">用户管理</li>
-                <li>作品管理</li>
-                <li>作品视图</li>
-                <li>个人资料</li>
-                <li>作品审核</li>
-            </ul>
-            <div class="layui-tab-content">
-                <div class="layui-tab-item layui-show">
-                    <iframe src="/user/list/page" style="width:100%; height:600px; border:none;"></iframe>
+<div class="admin-app">
+    <aside th:replace="admin/layout :: sidebar('dash')"></aside>
+    <div class="admin-main">
+        <div th:replace="admin/layout :: topbar('数据概览', 'PhotoAI 管理台 / 概览')"></div>
+        <div class="admin-body">
+            <p th:replace="admin/layout :: feedback"></p>
+
+            <section class="kpis" aria-label="关键指标">
+                <div class="kpi hot">
+                    <div class="lab">待审核作品</div>
+                    <div class="val" id="kpiPending">–<small>件</small></div>
+                    <div class="delta">等待管理员处理</div>
                 </div>
-                <div class="layui-tab-item">
-                    <iframe src="/pwork/list/page" style="width:100%; height:600px; border:none;"></iframe>
+                <div class="kpi">
+                    <div class="lab">今日已通过</div>
+                    <div class="val" id="kpiToday">–<small>件</small></div>
+                    <div class="delta">今日 0 点起，同件只计一次</div>
                 </div>
-                <div class="layui-tab-item">
-                    <iframe src="/view/workdetail/list/page" style="width:100%; height:600px; border:none;"></iframe>
+                <div class="kpi">
+                    <div class="lab">注册用户</div>
+                    <div class="val" id="kpiUsers">–<small>人</small></div>
+                    <div class="delta">含已禁用账号</div>
                 </div>
-                <div class="layui-tab-item">
-                    <iframe id="profileFrame" style="width:100%; height:600px; border:none;"></iframe>
+                <div class="kpi">
+                    <div class="lab">作品总数</div>
+                    <div class="val" id="kpiWorks">–<small>件</small></div>
+                    <div class="delta" id="kpiBreakdown">—</div>
                 </div>
-                <div class="layui-tab-item">
-                    <iframe src="/page/admin/audit" title="作品审核" style="width:100%; height:600px; border:none;"></iframe>
+            </section>
+
+            <div class="dash-grid">
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2>作品状态分布</h2>
+                        <span class="sub">四状态实时数量</span>
+                        <div class="spacer"></div>
+                        <span class="sub" id="statusTotal"></span>
+                    </div>
+                    <div class="bars" id="statusBars"></div>
                 </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2>分类分布</h2>
+                        <div class="spacer"></div>
+                        <span class="sub" id="categoryTotal"></span>
+                    </div>
+                    <div class="cate" id="categoryBars"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>最近待审核</h2>
+                    <span class="sub">按提交时间倒序，最多 3 件</span>
+                    <div class="spacer"></div>
+                    <a class="btn primary" th:href="@{/page/admin/audit}">去审核 →</a>
+                </div>
+                <table class="data-table">
+                    <caption class="sr-only">最近三件待审核作品</caption>
+                    <thead>
+                    <tr><th style="width:78px">图片</th><th>作品</th><th>作者</th><th>分类</th><th>提交时间</th></tr>
+                    </thead>
+                    <tbody id="recentRows">
+                    <tr><td colspan="5" class="empty">正在加载…</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
-<script th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
-<script>
-    layui.use(['element'], function() {
-        var element = layui.element;
-    });
+<style>
+    /* 概览页专属样式，类名独立，避免影响审核/作品/用户页。 */
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+    .kpi { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 16px 17px; }
+    .kpi .lab { font-size: 11.5px; color: var(--ink3); }
+    .kpi .val { font-size: 27px; font-weight: 700; letter-spacing: -.5px; margin: 7px 0 4px; font-variant-numeric: tabular-nums; }
+    .kpi .val small { font-size: 12px; font-weight: 500; color: var(--ink3); margin-left: 3px; }
+    .kpi .delta { font-size: 11px; color: var(--ink3); }
+    .kpi.hot { background: linear-gradient(180deg, #FFF7F2, #fff); border-color: #FFDCCB; }
+    .kpi.hot .delta { color: var(--warn); }
 
-    // 显示当前用户名
-    var uname = localStorage.getItem('uname') || '管理员';
-    document.getElementById('displayName').textContent = uname;
-
-    // 动态设置个人资料 iframe
-    var uid = localStorage.getItem('uid');
-    document.getElementById('profileFrame').src = '/user/edit/page?uid=' + uid;
-
-    // 退出登录
-    function doLogout() {
-        layui.use('layer', function() {
-            var layer = layui.layer;
-            layer.confirm('确定要退出登录吗？', {
-                title: '退出确认',
-                btn: ['确定', '取消']
-            }, function() {
-                localStorage.removeItem('token');
-                localStorage.removeItem('role');
-                localStorage.removeItem('uname');
-                localStorage.removeItem('uid');
-                document.cookie = 'token=; path=/; max-age=0';
-                window.location.href = '/login/page';
-            });
-        });
-    }
-</script>
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .bars { padding: 14px 18px 18px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 12px; }
+    .bar-row .nm { width: 62px; color: var(--ink2); }
+    .bar-row .track { flex: 1; height: 9px; border-radius: 6px; background: #F5F1EE; overflow: hidden; }
+    .bar-row .fill { height: 100%; border-radius: 6px; background: var(--amber); }
+    .bar-row .fill.show { background: #34C77B; }
+    .bar-row .fill.hide { background: #CBBFB8; }
+    .bar-row .fill.reject { background: #EF7C7C; }
+    .bar-row .num { width: 46px; text-align: right; color: var(--ink3); font-variant-numeric: tabular-nums; }
+    .cate { padding: 6px 18px 16px; }
+    .cate .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .cate .nm { width: 74px; font-size: 12px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cate .track { flex: 1; height: 7px; border-radius: 6px; background: #F5F1EE; overflow: hidden; }
+    .cate .fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--amber), var(--brand)); }
+    .cate .pc { width: 42px; text-align: right; font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+<script th:src="@{/static/admin/admin-dashboard.js(v=20261106b)}"></script>
 </body>
 </html>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.AdminStatsMapper">
+    <select id="statusCounts" resultType="java.util.LinkedHashMap">
+        SELECT COALESCE(SUM(wstatus='待审核'),0) AS pending,
+               COALESCE(SUM(wstatus='展示'),0) AS visible,
+               COALESCE(SUM(wstatus='隐藏'),0) AS hidden,
+               COALESCE(SUM(wstatus='已驳回'),0) AS rejected,COUNT(*) AS workCount
+        FROM pwork
+    </select>
+    <select id="userCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user
+    </select>
+    <select id="todayApprovedCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT pid) FROM waudit
+        WHERE act='pass' AND ct &gt;= #{start} AND ct &lt; #{end}
+    </select>
+    <select id="categoryCounts" resultType="java.util.LinkedHashMap">
+        SELECT c.pcid,c.pcname,COUNT(p.pid) AS count
+        FROM pclist c LEFT JOIN pwork p ON p.pcid=c.pcid
+        GROUP BY c.pcid,c.pcname,c.sort ORDER BY c.sort ASC,c.pcid ASC
+    </select>
+    <select id="uncategorizedCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork p LEFT JOIN pclist c ON c.pcid=p.pcid WHERE c.pcid IS NULL
+    </select>
+    <select id="recentPending" resultType="java.util.LinkedHashMap">
+        SELECT p.pid,p.uid,p.wtitle,p.vurl,u.uname,c.pcname,
+               DATE_FORMAT(p.cwtime,'%Y-%m-%dT%H:%i:%s+08:00') AS cwtime,p.wstatus
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE p.wstatus='待审核' ORDER BY p.cwtime DESC,p.pid ASC LIMIT 3
+    </select>
+</mapper>

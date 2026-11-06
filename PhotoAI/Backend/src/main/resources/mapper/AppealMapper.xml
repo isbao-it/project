@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.AppealMapper">
+    <select id="lockUser" resultType="java.util.LinkedHashMap">
+        SELECT uid,status FROM user WHERE openid=#{openid} FOR UPDATE
+    </select>
+    <select id="pendingCount" resultType="long">
+        SELECT COUNT(*) FROM appeal
+        WHERE uid=#{uid} AND status='待处理' AND ct &gt;= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)
+    </select>
+    <select id="minuteCount" resultType="long">
+        SELECT COUNT(*) FROM appeal WHERE uid=#{uid} AND ct &gt;= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MINUTE)
+    </select>
+    <insert id="insert">
+        INSERT INTO appeal (aid,uid,content,status,ct)
+        VALUES (#{aid},#{uid},#{content},'待处理',CURRENT_TIMESTAMP)
+    </insert>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM appeal
+        <where><if test="status != null">status=#{status}</if></where>
+    </select>
+    <select id="page" resultType="java.util.LinkedHashMap">
+        SELECT a.aid,a.uid,u.uname AS nickname,u.avatar,a.content,a.status,
+               CONCAT(DATE_FORMAT(a.ct,'%Y-%m-%dT%H:%i:%s'),'+08:00') AS ct,
+               a.handler,CONCAT(DATE_FORMAT(a.hct,'%Y-%m-%dT%H:%i:%s'),'+08:00') AS hct,a.reason
+        <!-- 两库实查：旧 user 为 general_ci，新 appeal 为 0900_ai_ci；连接时统一旧表规则，避免 1267。 -->
+        FROM appeal a LEFT JOIN user u ON u.uid=a.uid COLLATE utf8mb4_general_ci
+        <where><if test="status != null">a.status=#{status}</if></where>
+        ORDER BY a.ct DESC,a.aid DESC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="lockAppeal" resultType="java.util.LinkedHashMap">
+        SELECT aid,uid,status FROM appeal WHERE aid=#{aid} FOR UPDATE
+    </select>
+    <update id="handle">
+        UPDATE appeal SET status=#{status},handler=#{handler},hct=CURRENT_TIMESTAMP,reason=#{reason,jdbcType=VARCHAR}
+        WHERE aid=#{aid} AND status='待处理'
+    </update>
+    <update id="enableUser">
+        UPDATE user SET status='正常' WHERE uid=#{uid}
+    </update>
+</mapper>

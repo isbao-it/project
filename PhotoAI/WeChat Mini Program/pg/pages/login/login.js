@@ -38,7 +38,15 @@ Page({
             app.setLoginInfo(res.data)
             return this.loadProfileAndReturn()
           })
-          .catch(error => this.loginFailed(error instanceof Error ? '登录失败，请重试' : undefined))
+          .catch(error => {
+            // 封禁不是"登录失败"：直接引导到申诉页，避免用户反复点重试。
+            if (error && error.code === 'account_disabled') {
+              this.setData({ submitting: false })
+              wx.navigateTo({ url: '/pages/appeal/appeal' })
+              return
+            }
+            this.loginFailed(error instanceof Error ? '登录失败，请重试' : undefined)
+          })
       },
       fail: error => {
         const timeout = (error.errMsg || '').includes('timeout')

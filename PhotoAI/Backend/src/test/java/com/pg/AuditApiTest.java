@@ -696,11 +696,15 @@ class AuditApiTest {
         assertUidStatus(statusAs(A, U, "禁用"), U, "禁用");
         assertThat(statusOf(U)).isEqualTo("禁用");
         assertThat(roleOf(U)).isEqualTo("普通用户");
-        assertThat(pworkRowSnapshot(P3)).isEqualTo(p3Before);
-        assertThat(auditRows()).isEqualTo(before);
+        // 契约变更（docs/接口增补_ADMIN.md §5.2，2026-11-06 用户拍板）：
+        // 禁用用户时其"展示"作品必须同事务改为"隐藏"，因此这里不再断言整行快照不变。
+        assertThat(statusOfWork(P3)).as("禁用后展示作品应变隐藏").isEqualTo("隐藏");
+        assertThat(pworkRowSnapshot(P3)).as("wstatus 由展示变隐藏，整行快照应有差异")
+                .isNotEqualTo(p3Before);
+        assertThat(auditRows()).as("禁用不写审核日志").isEqualTo(before);
         assertUidStatus(statusAs(A, U, "正常"), U, "正常");
         assertThat(statusOf(U)).isEqualTo("正常");
-        assertThat(pworkRowSnapshot(P3)).isEqualTo(p3Before);
+        assertThat(statusOfWork(P3)).as("解禁不自动恢复作品").isEqualTo("隐藏");
         assertThat(auditRows()).isEqualTo(before);
     }
 

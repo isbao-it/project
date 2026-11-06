@@ -1,0 +1,25 @@
+你是测试岗工人，只写测试文件，不写实现、不改任何其它文件。
+
+任务：新建 `Backend/src/test/java/com/pg/AdminAppealTest.java`，覆盖封禁申诉接口（契约：docs/接口增补_ADMIN.md §7）。
+只创建这一个文件；不许改 src/main/**、其它测试、pom.xml、配置。
+
+第一步先读：docs/接口增补_ADMIN.md 的 §7；再读 Backend/src/test/java/com/pg/AdminStatusLinkageTest.java（照抄类注解/注入/夹具/断言风格）。
+
+骨架（照抄）：
+- 包 com.pg；@SpringBootTest(webEnvironment=MOCK) + @AutoConfigureMockMvc + @ActiveProfiles("test") + @TestConstructor(autowireMode=ALL)
+- @DynamicPropertySource → jdbc:mysql://localhost:3306/db_pg_test_04?...&serverTimezone=Asia/Shanghai&sessionVariables=lock_wait_timeout=2，root/root
+- 构造器注入 MockMvc / JdbcTemplate / JwtUtils / ObjectMapper；管理员 token 用 jwtUtils.generateToken("ap-adm","管理员")
+- **微信身份用 Mockito 打桩**：`@MockBean private WeChatClient weChatClient;`，然后在用例里 `when(weChatClient.code2Session("ap-code-1")).thenReturn("ap-openid-1");`（import org.mockito.Mockito.when；WeChatClient 全名 com.pg.service.WeChatClient）。不要真的连微信。
+- 夹具前缀 `ap-`；@BeforeEach 清 ap-%，@AfterEach 按顺序清 appeal → user（appeal 无外键，先删 appeal 再删 user）
+- 用户插入用 SQL：INSERT INTO user (uid, uname, role, pwd, avatar, vote, status, openid) VALUES (...)
+
+7 条用例（方法名 ap_01..ap_07）：
+1. ap_01_anonymousSubmitSuccess：造用户 ap-u1（openid=ap-openid-1，status=禁用）；POST /appeal {"code":"ap-code-1","content":"请求解封"} → 200，data 含 aid 与 status=待处理；appeal 表该 uid 恰 1 行且 content 为原文。
+2. ap_02_normalUserCannotAppeal：用户 status=正常 → 同样提交 → 400 invalid_request。
+3. ap_03_unknownOpenidNotFound：code 打成返回 ap-openid-none → 404 not_found。
+4. ap_04_duplicatePendingConflicts：同一被封用户连续提交两次 → 第二次 409 conflict；appeal 表仍 1 行。
+5. ap_05_invalidContentRejected：content 为空串 / 全空白 / 201 个字符 → 逐个 400；appeal 表不新增。
+6. ap_06_adminAcceptReenables：先有 1 条待处理申诉，管理员 PUT /admin/appeal/{aid}/handle {"result":"接受"} → 200；appeal.status=已受理、handler=ap-adm；user.status 变回正常。
+7. ap_07_adminRejectKeepsDisabled：管理员 {"result":"驳回","reason":"理由不足"} → 200；appeal.status=已驳回 且 reason 入库；user.status 仍是禁用。
+
+要求：中文注释 + 每方法一行 Javadoc 标注对应契约小节；UTF-8 无 BOM；Java 8（禁 var / List.of）。写盘后自查 > 4000 字节，再输出 ≤20 行结论（路径、用例清单、声明未运行 Maven）。不要复述代码。

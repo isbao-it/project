@@ -4,6 +4,7 @@ import com.pg.common.BizException;
 import com.pg.common.ErrorCode;
 import com.pg.mapper.AuditMapper;
 import com.pg.service.AuditService;
+import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +28,12 @@ public class AuditServiceImpl implements AuditService {
             "viewcount", "votecount", "wstatus", "cwtime", "likep", "uname", "avatar", "pcname", "realLikeCount");
     private static final List<String> COUNTERS = Arrays.asList("viewcount", "votecount", "likep", "realLikeCount");
     private final AuditMapper auditMapper;
+    private final SqlSessionTemplate sqlSessionTemplate;
 
-    /** @param auditMapper 只处理审核的数据访问组件 */
-    public AuditServiceImpl(AuditMapper auditMapper) {
+    /** @param auditMapper 只处理审核的数据访问组件 @param sqlSessionTemplate 参与同一事务的作者锁定读组件 */
+    public AuditServiceImpl(AuditMapper auditMapper, SqlSessionTemplate sqlSessionTemplate) {
         this.auditMapper = auditMapper;
+        this.sqlSessionTemplate = sqlSessionTemplate;
     }
 
     /** {@inheritDoc} */
@@ -60,7 +64,8 @@ public class AuditServiceImpl implements AuditService {
 
     /** {@inheritDoc} */
     @Override
-    @Transactional
+    // 自动驳回的业务 409 必须提交；其余业务拒绝都在写入前，数据库异常仍回滚状态与日志。
+    @Transactional(noRollbackFor = BizException.class)
     public Map<String, Object> approve(String pid, String adminUid) {
         return decide(pid, "展示", "pass", null, adminUid);
     }
@@ -84,6 +89,18 @@ public class AuditServiceImpl implements AuditService {
         if (pid == null || !pid.matches("[A-Za-z0-9_-]{1,36}")) {
             throw invalid();
         }
+        boolean autoReject = false;
+        if ("pass".equals(act)) {
+            // 与禁用接口统一先锁作者再写作品，避免并发禁用后旧状态仍被通过，也避免锁顺序相反。
+            String authorStatus = sqlSessionTemplate.selectOne("com.pg.mapper.AuditMapper.lockAuthorStatus",
+                    Collections.singletonMap("pid", pid));
+            autoReject = !"正常".equals(authorStatus);
+            if (autoReject) {
+                status = "已驳回";
+                act = "reject";
+                reason = "作者账号已被禁用";
+            }
+        }
         // 条件 UPDATE 是唯一胜者判据；不能先查状态再覆盖并发审核结果。
         if (auditMapper.updatePending(pid, status) == 0) {
             if (auditMapper.findForUpdate(pid) == null) {
@@ -100,6 +117,10 @@ public class AuditServiceImpl implements AuditService {
         audit.put("uadmin", adminUid);
         audit.put("ct", Timestamp.valueOf(LocalDateTime.now(AUDIT_ZONE)));
         auditMapper.insertAudit(audit);
+        if (autoReject) {
+            // 只有待审条件更新和唯一日志都成功后才返回业务冲突，不能让非待审作品追加日志。
+            throw new BizException(ErrorCode.AUTHOR_DISABLED, ErrorCode.AUTHOR_DISABLED.getMessage());
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("pid", pid);
         result.put("status", status);

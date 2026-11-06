@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pg.mapper.AuditMapper">
+    <!-- 锁定读获取作者当前状态；作品行锁由后续条件更新取得，顺序与禁用用户一致。 -->
+    <select id="lockAuthorStatus" resultType="java.lang.String">
+        SELECT status FROM user WHERE uid=(SELECT uid FROM pwork WHERE pid=#{pid}) FOR UPDATE
+    </select>
+    <select id="lockStatus" resultType="java.util.LinkedHashMap">
+        SELECT p.wstatus,DATE_FORMAT((SELECT MAX(a.ct) FROM waudit a WHERE a.pid=p.pid),
+                                    '%Y-%m-%dT%H:%i:%s') AS latestAuditTime
+        FROM pwork p WHERE p.pid=#{pid} FOR UPDATE
+    </select>
+    <update id="updateNonPending">
+        UPDATE pwork SET wstatus=#{status}
+        WHERE pid=#{pid} AND wstatus=#{current} AND wstatus IN ('展示','隐藏','已驳回')
+    </update>
     <select id="countPending" resultType="java.lang.Long">
         SELECT COUNT(*) FROM pwork WHERE wstatus='待审核'
     </select>

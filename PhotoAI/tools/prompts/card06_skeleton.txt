@@ -1,0 +1,27 @@
+任务：为卡 06 搭测试骨架（**只搭骨架，不写断言内容**）。产物是三个能编译、能跑、可红可绿的测试类，断言体一律先留 fail("TODO: T06-xx")，由测试岗后续填。
+
+必读：docs/cards/06_分类收藏同款_测试卡.md（55 条 T06-01..55，读它的表格拿到每条的方法+路径+期望）、docs/cards/06_分类收藏同款_执行卡.md、docs/接口冻结_v1.md v1.1 §1.6。
+
+要新建的文件（只这三个，不许改别的）：
+- Backend/src/test/java/com/pg/CategoryTest.java（覆盖卡面里 /category 相关条目）
+- Backend/src/test/java/com/pg/FavoriteTest.java（/favorite 相关）
+- Backend/src/test/java/com/pg/SimilarTest.java（/similar 相关）
+
+每个类的骨架要求（务必照做，这是前几轮反复踩的坑）：
+1) 类注解：@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK) + @AutoConfigureMockMvc + @ActiveProfiles("test") + @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+2) 构造器注入：MockMvc + JdbcTemplate + JwtUtils + ObjectMapper（配合上面的 @TestConstructor 才生效）
+3) 数据库：类内 @DynamicPropertySource 固定 spring.datasource.url 指向 db_pg_test_06（root/root，utf8mb4，serverTimezone=Asia/Shanghai），不改 application-test.yml
+4) 夹具：@BeforeEach 里清理 c06- 前缀数据；提供 seedUser/seedWork/seedFavorite 等私有辅助方法（用 jdbc 直接写库）
+5) 每个 T 编号一个 @Test 方法，方法名格式 t06_01_xxx（xxx 用英文短横线语义名），方法体：
+   ```java
+   fail("TODO: T06-01 <该条断言的一句话描述>");
+   ```
+   并带中文注释写清该条要断言什么（从卡面抄要点，不写实现细节）
+6) 工具方法：token(uid, role) 用 JwtUtils 直接签；assertEnvelope 留空壳 `throw new UnsupportedOperationException("由测试岗实现")` 也可以，但更简单的是骨架里不要它，让测试岗自己加
+7) 不许 @Disabled；不许 import 尚不存在的类（controller/service 都还没实现，只能依赖 MockMvc + jdbc + JwtUtils + ObjectMapper）
+
+验收标准（你要自己跑）：cd Backend && JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504 bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp test -Dtest='CategoryTest,FavoriteTest,SimilarTest'
+→ 必须是「编译通过 + 全部 fail("TODO")」，Failures 数 = T 编号数，Errors 必须是 0。
+然后把 Failures/Errors 数字写进结论。
+
+禁 git、禁改实现、禁改既有测试。交付：_Outputs/待审核/06/T01/骨架说明.md（≤30 行：每个类多少条 @Test、覆盖哪些 T 编号、编译与红态数字）。

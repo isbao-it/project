@@ -1,0 +1,62 @@
+你是实现岗工人。本任务同时实现两个互不相关的管理端功能，共用一次编译验证。
+契约权威：docs/接口增补_ADMIN.md 的 §7（封禁申诉）与 §8（分类管理），先读这两节。
+
+## 允许改动的文件（白名单，越界即失败）
+
+新建：
+- Backend/src/main/java/com/pg/controller/AdminAppealController.java
+- Backend/src/main/java/com/pg/controller/AdminCategoryController.java
+- Backend/src/main/java/com/pg/service/AppealService.java、service/impl/AppealServiceImpl.java
+- Backend/src/main/java/com/pg/service/CategoryService.java、service/impl/CategoryServiceImpl.java
+- Backend/src/main/java/com/pg/mapper/AppealMapper.java、mapper/CategoryMapper.java（若已存在同职责 Mapper 则改之，不新建重复的）
+- Backend/src/main/resources/mapper/AppealMapper.xml、mapper/CategoryMapper.xml（同上原则）
+
+允许修改：
+- 拦截器/WebMvcConfig 的白名单：**必须**让 `POST /appeal` 匿名可达（其身份靠 wx code 自证）；其余新接口仍要求管理员
+- ErrorCode.java 只在必要时加码（`ACCOUNT_DISABLED` 已存在，勿重复加/勿改其它码）
+
+**禁止**：改任何测试（AdminAppealTest / AdminCategoryTest / 其它测试一字不动）、改 templates/**、static/**、pom.xml、application*.yml、db/migration/**、既有 AdminUserController/AdminWorkController/AdminUserServiceImpl/AuditServiceImpl 的行为。
+
+## 任务 A：分类新增（§8）
+
+`POST /admin/category`，body `{pcname, cds?}`：
+- pcname 必填、1–20 Unicode 字符、不得全空白、**不 trim**；重名字面完全一致 → 409 conflict「分类已存在」
+- pcid 服务端生成 UUID(36 位去横线)，忽略客户端传入
+- sort = 当前 MAX(sort)+10，在同一事务/同一 SQL 里算（`INSERT ... SELECT COALESCE(MAX(sort),0)+10 FROM pclist` 之类），避免并发撞号
+- 成功 data 恰 `{pcid, pcname, sort}`
+- 先查表结构（pclist）确认真实列名与列宽，不要猜；`SELECT *` 禁止
+
+## 任务 B：封禁申诉（§7）
+
+1) `POST /appeal`（匿名）body `{code, content}`：
+- code2session 复用 AuthController 里与 `/auth/wxlogin` **完全相同**的 mock 规则（dev + `mock:` 前缀），**不要**自己发明第二套；建议抽出私有方法或复用现有 Bean，避免复制粘贴两份判断
+- code 换不到 openid → 401 unauthorized
+- content 1–200 Unicode 字且非全空白，否则 400 invalid_request
+- openid 对应用户不存在 或 用户 status='正常' → **统一** 400 invalid_request，文案「账号不存在或无需申诉」（不泄露账号是否存在）
+- 24h 内已有 status='待处理' 的申诉 → 409 conflict
+- 同一 openid 每分钟 >1 次 → 429 too_many_requests（用 appeal 表按 ct 计数，不引入 Redis）
+- 成功 `{aid, status:"待处理"}`
+
+2) `GET /admin/appeal/list?status&page&size`：管理员；data 恰 `{list,total}`；每项恰 `aid,uid,nickname,avatar,content,status,ct,handler,hct,reason`；排序 `ct DESC, aid DESC`；status 只接受 待处理/已受理/已驳回，其它 400；size 1–50，page≥1。
+
+3) `PUT /admin/appeal/{aid}/handle` body `{result:"接受"|"驳回", reason?}`：管理员
+- 接受：**同一事务** `appeal.status='已受理'` + handler/hct，同时 `user.status='正常'`；**不恢复作品展示状态**
+- 驳回：`status='已驳回'`，reason 必填 1–200，写 handler/hct
+- aid 不存在 404；非「待处理」409 conflict
+- 成功 data 恰 `{aid,status}`
+
+## 通用要求
+
+Java 8；`private final` 构造器注入；`BizException(ErrorCode.XXX)`；中文 Javadoc + 复杂处写"为什么"；禁 `SELECT *`；禁字符串拼 SQL；prepared 参数；UTF-8 无 BOM，末尾 LF。错误码只用现有枚举，缺什么先报告不要私自加。
+
+## 真跑（必须自己跑，不许只改代码）
+
+export JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504; export PATH="$JAVA_HOME/bin:$PATH"
+export HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 NO_PROXY=localhost,127.0.0.1
+cd "C:/work/dev/projects/PhotoAI Hub/Backend"
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminAppealTest,AdminCategoryTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminApiTest test
+
+目标：AdminAppealTest 7/7、AdminCategoryTest 5/5、AdminApiTest 仍 30/30。`appeal` 表已建好（db_pg_test_04 与 db_pg）。失败先归因；不许改断言求绿；Errors>0 先修自己。
+
+交回 ≤25 行：改动/新建文件清单、三条命令结果、未验证项或风险。

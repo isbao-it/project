@@ -1,0 +1,18 @@
+<!-- 账号申诉页：被封禁用户无法登录，此页免登录可用（身份由 wx.login 的 code 自证） -->
+<view class="page">
+  <view class="card">
+    <view class="title">账号已被封禁</view>
+    <view class="desc">你的账号当前无法登录使用。如果认为处理有误，可以在下方说明情况提交申诉，管理员处理后会解除封禁。</view>
+
+    <block wx:if="{{done}}">
+      <view class="done">申诉已提交，请等待管理员处理。处理期间无需重复提交。</view>
+    </block>
+    <block wx:else>
+      <textarea class="input" maxlength="200" placeholder="请填写申诉理由（1-200 字）"
+                value="{{content}}" bindinput="onInput" auto-height />
+      <view class="counter">{{content.length}}/200</view>
+      <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">提交申诉</button>
+    </block>
+  </view>
+  <view class="tip">申诉结果不会单独通知，账号恢复后可正常登录。</view>
+</view>

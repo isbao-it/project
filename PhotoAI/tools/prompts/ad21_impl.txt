@@ -1,0 +1,32 @@
+实现管理端 v2.1 两条联动。必读：
+- docs/接口增补_ADMIN.md §5.2 与 §5.3（契约权威，逐字执行）
+- Backend/src/test/java/com/pg/AdminStatusLinkageTest.java（**冻结测试，只读，一个字符都不许改**，5 条用例 as_01..as_05）
+- Backend/src/main/java/com/pg/service/impl/AdminUserServiceImpl.java（changeStatus 现实现）
+- Backend/src/main/java/com/pg/service/impl/AuditServiceImpl.java（approve 现实现）
+- Backend/src/main/resources/mapper/AdminUserMapper.xml、AuditMapper.xml
+
+当前红态：`-Dtest=AdminStatusLinkageTest` 5 跑 / 3 失败 / 0 error；失败的正是 as_01、as_02、as_03（as_04/as_05 已绿，别做多余改动）。
+
+任务 A（§5.2）：`PUT /admin/user/{uid}/status` 生效为「禁用」时，**同一事务内**把该用户 `wstatus='展示'` 的作品改成 `隐藏`。
+- 只动 `展示`；待审核/隐藏/已驳回不变；别人的作品不动
+- 解禁不自动恢复
+- 返回仍为 `{uid,status}`，不加字段
+- 保护规则（禁自己 403、最后管理员 409）必须先于任何作品写入
+
+任务 B（§5.3）：`PUT /admin/work/{pid}/approve` 判定前查作者 `user.status`。
+- 正常 → 原逻辑不变（as_04 必须保持绿）
+- 非正常或作者不存在 → **同事务**把作品改为 `已驳回` + 写恰好一条 `waudit(act='reject', reason='作者账号已被禁用', uadmin=<当前管理员>, ct=现有审计口径)`，然后抛 `BizException(ErrorCode.CONFLICT, "作者账号已被禁用，已自动驳回")`
+- 作品原本不是 `待审核` → 仍按既有 409「非待审核」，不写日志（既有 AuditApiTest 的相关断言不得回归）
+
+硬约束：只改上面 4 个文件（两个 ServiceImpl + 两个 Mapper XML），不许改测试、不许碰 Controller/模板/其它 Service、不加依赖、不改 POM、不执行 git。Java 8；中文注释；复杂点写"为什么"；UTF-8 无 BOM。
+
+真跑：
+export JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504; export PATH="$JAVA_HOME/bin:$PATH"
+export HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 NO_PROXY=localhost,127.0.0.1
+cd "C:/work/dev/projects/PhotoAI Hub/Backend"
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminStatusLinkageTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminApiTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AuditApiTest test
+
+目标：AdminStatusLinkageTest 5/5 绿；AdminApiTest 30/30 绿；AuditApiTest 不新增失败（当前 30 跑 / 3 红为既有欠账：aud_15/24/25）。
+失败先归因，Errors>0 先修自己；不许改断言求绿。交回：改动文件、三条命令结果、未验证项。

@@ -360,20 +360,22 @@ class WxLoginTest {
         }
     }
 
-    /** T02-07：openid 命中禁用用户——401 unauthorized，只返回信封三字段。 */
+    /** T02-07：openid 命中禁用用户——403 account_disabled，只返回信封三字段。 */
     @Test
-    void wx_07_disabledAccountCodeIsUnauthorized() throws Exception {
+    void wx_07_disabledAccountCodeIsAccountDisabled() throws Exception {
         String uid = uidOf("DIS7");
         seedUser(jdbc, uid, "T02禁用七", "13812340005", "普通用户", ENCODER.encode(NORMAL_PWD), "禁用", "/a.png",
                 "openid-t02-07", null);
         WeChatStub.success("wx-disabled", "openid-t02-07");
         long before = userCount();
+        // 契约修订（docs/接口增补_ADMIN.md §7.4）：封禁不再是笼统 401，
+        // 改 403 account_disabled，让客户端能提示"账号已被封禁"并给申诉入口。
         MvcResult result = mvc.perform(post("/auth/wxlogin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"code\":\"wx-disabled\"}"))
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isForbidden())
                 .andReturn();
-        assertErrorEnvelope(mapper, result, 401, "unauthorized");
+        assertErrorEnvelope(mapper, result, 403, "account_disabled");
         assertThat(userCount()).isEqualTo(before);
     }
 
@@ -880,13 +882,14 @@ class WxLoginTest {
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         assertErrorEnvelope(mapper, missing, 401, "unauthorized");
+        // 契约修订（§7.4）：管理员账密登录遇禁用账号同样返回 403 account_disabled。
         MvcResult disabled = mvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("pnum", "19900000006")
                         .param("pwd", ADMIN_PWD))
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isForbidden())
                 .andReturn();
-        assertErrorEnvelope(mapper, disabled, 401, "unauthorized");
+        assertErrorEnvelope(mapper, disabled, 403, "account_disabled");
         MvcResult wrongPwd = mvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("pnum", "19900000003")

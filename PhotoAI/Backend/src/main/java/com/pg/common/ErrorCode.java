@@ -8,6 +8,8 @@ public enum ErrorCode {
     FORBIDDEN(403, "forbidden", "无权访问该资源"),
     NOT_FOUND(404, "not_found", "资源不存在"),
     CONFLICT(409, "conflict", "数据冲突"),
+    AUTHOR_DISABLED(409, "author_disabled", "作者账号已被禁用，已自动驳回"),
+    ACCOUNT_DISABLED(403, "account_disabled", "账号已被封禁"),
     PAYLOAD_TOO_LARGE(413, "payload_too_large", "上传内容过大"),
     CONTENT_REJECTED(422, "content_rejected", "内容未通过安全检查"),
     INVALID_IMAGE(422, "invalid_image", "图片格式或内容无效"),

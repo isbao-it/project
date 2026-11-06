@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pg.mapper.AdminWorkMapper">
+    <sql id="Columns">
+        p.pid,p.uid,p.wtitle,COALESCE(p.wdesc,'') AS wdesc,p.vurl,
+        COALESCE(p.viewcount,0) AS viewcount,COALESCE(p.votecount,0) AS votecount,p.wstatus,
+        DATE_FORMAT(p.cwtime,'%Y-%m-%dT%H:%i:%s+08:00') AS cwtime,
+        COALESCE(p.likep,0) AS likep,u.uname,u.avatar,p.pcid,c.pcname,
+        (SELECT COUNT(*) FROM liketable l WHERE l.targetid=p.pid AND l.targettype='帖子') AS realLikeCount,
+        (SELECT COUNT(*) FROM favorite f WHERE f.pid=p.pid) AS favoriteCount,
+        (SELECT CASE WHEN a.act='reject' THEN a.reason ELSE NULL END
+         FROM waudit a WHERE a.pid=p.pid ORDER BY a.ct DESC,a.aid DESC LIMIT 1) AS reason
+    </sql>
+    <sql id="Filter">
+        <where>
+            <if test="status != null">AND p.wstatus=#{status}</if>
+            <if test="category != null">AND p.pcid=#{category}</if>
+            <!-- LOCATE 直接做字面子串匹配，避免 LIKE 的通配符及转义符改变用户输入的含义。 -->
+            <if test="keyword != null and keyword != ''">
+                AND (LOCATE(#{keyword},p.wtitle)&gt;0 OR LOCATE(#{keyword},u.uname)&gt;0 OR p.pid=#{keyword})
+            </if>
+        </where>
+    </sql>
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM pwork p LEFT JOIN user u ON u.uid=p.uid <include refid="Filter"/>
+    </select>
+    <select id="page" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="Columns"/>
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        <include refid="Filter"/>
+        ORDER BY p.cwtime DESC,p.pid ASC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="detail" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="Columns"/>
+        FROM pwork p LEFT JOIN user u ON u.uid=p.uid LEFT JOIN pclist c ON c.pcid=p.pcid
+        WHERE p.pid=#{pid}
+    </select>
+    <select id="exif" resultType="java.util.LinkedHashMap">
+        SELECT focal,aperture,shutter,iso,lens,camera FROM work_exif WHERE pid=#{pid}
+    </select>
+</mapper>

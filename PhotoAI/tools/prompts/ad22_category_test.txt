@@ -1,0 +1,24 @@
+你是测试岗工人，只写测试文件，不写实现、不改任何其它文件。
+
+任务：新建 `Backend/src/test/java/com/pg/AdminCategoryTest.java`，覆盖分类新增接口（契约：docs/接口增补_ADMIN.md §8）。
+只创建这一个文件；不许改 src/main/**、其它测试、pom.xml、配置。
+
+第一步先读：docs/接口增补_ADMIN.md 的 §8；再读 Backend/src/test/java/com/pg/AdminStatusLinkageTest.java（照抄它的类注解、@DynamicPropertySource、构造器注入、夹具与断言风格）。
+
+骨架照抄（不要自创）：
+- 包 com.pg；类注解 @SpringBootTest(webEnvironment=MOCK) + @AutoConfigureMockMvc + @ActiveProfiles("test") + @TestConstructor(autowireMode=ALL)
+- @DynamicPropertySource 指向 jdbc:mysql://localhost:3306/db_pg_test_04?...&serverTimezone=Asia/Shanghai&sessionVariables=lock_wait_timeout=2，root/root
+- 构造器注入 MockMvc / JdbcTemplate / JwtUtils / ObjectMapper；token 用 jwtUtils.generateToken(uid, "管理员")
+- 夹具前缀 `ac-`（不要用 ad-/as-）；@BeforeEach 清理 ac-%，@AfterEach 同样清理（pclist 无外键，直接 DELETE FROM pclist WHERE pcid LIKE 'ac-%' 或 pcname LIKE 'ac-%'；user 按 uid 前缀）
+- 只走 HTTP，不 import 未实现类
+
+夹具：管理员 AC-ADM（管理员/正常）、普通用户 AC-U（普通用户/正常）。
+
+5 条用例（as_ 改成 ac_ 前缀方法名）：
+1. ac_01_createCategoryAppearsInList：POST /admin/category {"pcname":"ac新分类"} → 200，data 含 pcid/pcname/sort 且 pcname 相同；再 GET /category/list 能找到该 pcname（且 pcid 一致）。
+2. ac_02_duplicateNameConflicts：先建 "ac重复"，再建同名 → 409 且 code=conflict；库里该名字仍只有 1 行。
+3. ac_03_invalidNameRejected：pcname 为空串 / 全空白 / 21 个字符 / 缺失 → 逐个 400 invalid_request；库里不新增任何行。
+4. ac_04_permissionMatrix：匿名 → 401 unauthorized；普通用户 token → 403 forbidden；两者都不写入数据。
+5. ac_05_sortIsAppended：连续建 3 个分类，sort 严格递增且最后一个 = 前两个之间差值为正；三个 pcid 互不相同。
+
+要求：中文注释 + 每个方法一行 Javadoc 说明对应哪条契约；UTF-8 无 BOM；Java 8（禁 var / List.of）。写盘后自查文件 > 4000 字节，再输出 ≤20 行结论（文件路径、用例清单、声明未运行 Maven）。不要复述代码。

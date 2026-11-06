@@ -62,8 +62,12 @@ public class ProfileServiceImpl implements ProfileService {
             }
             user = profileMapper.findByOpenid(openid);
         }
-        if (user == null || !"正常".equals(user.getStatus())) {
+        if (user == null) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "账号不可用");
+        }
+        // 禁用与"账号不存在"必须区分：被禁用户要看到明确的封禁提示，而不是笼统的登录失败。
+        if (!"正常".equals(user.getStatus())) {
+            throw new BizException(ErrorCode.ACCOUNT_DISABLED, "账号已被封禁");
         }
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", jwtUtils.generateToken(user.getUid(), user.getRole()));

@@ -1,0 +1,26 @@
+续跑实现（上一轮你主动停轮是对的，两个问题都已裁决）。先读：
+- docs/接口增补_ADMIN.md §5、§5.1（**已更新**：gift/orderinfo 已确认纳入级联，共 13 张表；不带 cascade 必须保持 v1 的 data=null）
+- Backend/src/test/java/com/pg/AdminApiTest.java（**冻结测试，只读**，SHA256=bb9ba1c0713e6a101e4967ad9c13898b2c3942e975cabc95c1edb11de48b3021）
+
+既成事实（不要重做）：
+- guards 的 workCount 已实现，ad_18 已绿。
+- 当前红态：29 跑 / 2 失败 / 0 error，只剩 ad_28 与 ad_26。
+
+你上一轮发现的两点，裁决如下：
+1. 与 AuditApiTest 的 data=null 冲突 → **以既有冻结测试为准**：不带 cascade 的成功删除**继续返回 data=null**（含无作品的用户）；只有 cascade=true 才返回 {uid, deletedWorks}。不要改 AuditApiTest。
+2. gift / orderinfo → **纳入级联**（用户已拍板：订单与礼物功能确定不做）。删除顺序：… → pwork → gift → orderinfo → user。注意这两表无外键、gift.gstatus 与 orderinfo.orstatus 是带默认值的 enum，实现里只按 uid 删即可。
+
+剩余两件事：
+A. 普通删除（无 cascade）回退成 v1：成功 data=null；有作品仍 409；有作品但未传 cascade 不许删。
+B. cascade=true 的级联事务：按 §5.1 的 13 张表顺序显式删除，返回 data 恰 {uid, deletedWorks}（deletedWorks = 实际删除的 pwork 行数）；禁删自己 403、最后管理员 409、不存在 404；任一语句失败整笔回滚。
+
+约束同上一轮：只改 AdminUserController / AdminUserService / impl / AdminUserMapper(.java/.xml)；不碰模板与其它 Controller；不改测试；不加依赖；不执行 git；Java 8；中文注释；UTF-8 无 BOM。
+
+真跑（上一轮你遇到默认仓库不可写，用这个仓库路径重试，或直接跑下面脚本）：
+export JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504; export PATH="$JAVA_HOME/bin:$PATH"
+export HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 NO_PROXY=localhost,127.0.0.1
+cd "C:/work/dev/projects/PhotoAI Hub/Backend"
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminApiTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AuditApiTest test
+
+目标：AdminApiTest 29 全绿且 AuditApiTest 不回归。交回：改动文件、两条命令的 Tests run/Failures/Errors、级联实际清理了哪些表各几行（列清单）、未验证项。

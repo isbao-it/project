@@ -1,0 +1,31 @@
+你是一个测试岗工人，只写测试文件，不写实现、不改任何其它文件。
+
+任务：新建 `Backend/src/test/java/com/pg/AdminStatusLinkageTest.java`，覆盖下面 5 条用例。
+只允许创建这一个文件；不许改 `AdminApiTest.java`、`AuditApiTest.java`、任何 src/main/**、pom.xml 或配置。
+
+必读（先读再写）：
+- docs/接口增补_ADMIN.md 的 §5.2 与 §5.3（本次要测的行为）
+- Backend/src/test/java/com/pg/AdminApiTest.java 的**前 200 行**（照抄它的类注解、@DynamicPropertySource、构造器注入、夹具写法、assertOk/parseBody 风格）
+
+骨架必须完全照下面写（照抄，别自己发明）：
+- 包名 com.pg
+- 类注解：@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK) + @AutoConfigureMockMvc + @ActiveProfiles("test") + @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+- @DynamicPropertySource 固定指向 jdbc:mysql://localhost:3306/db_pg_test_04?...&serverTimezone=Asia/Shanghai&sessionVariables=lock_wait_timeout=2，root/root
+- 构造器注入 MockMvc / JdbcTemplate / JwtUtils / ObjectMapper
+- token 用 jwtUtils.generateToken(uid, "管理员") 拼成 "Bearer " + token
+- 夹具统一 `as-` 前缀（**不要用 ad- 前缀**，另一个测试类会清理 ad- 数据），@BeforeEach 先清 as-%，@AfterEach 反向清理（顺序：waudit→liketable→follow→comment→favorite→vote→pcatogory→work_embedding→work_exif→pwork→user）
+- 只通过 HTTP 打接口，不 import 任何未实现的类（实现缺失时应表现为 404/断言失败，而不是编译失败）
+
+夹具：管理员 AS-ADM（管理员/正常）、普通用户 AS-U（正常）、AS-D（待禁用）；作品 AS-W1..W4 属于 AS-U 且状态分别为 展示/待审核/隐藏/已驳回；另一用户 AS-O 的展示作品 AS-W5。
+
+5 条用例（每条一个 @Test，方法名用 as_01_... 到 as_05_...）：
+1. as_01_disableUserHidesVisibleWorks：PUT /admin/user/AS-U/status body {"status":"禁用"} → 200；库里 AS-U 的 AS-W1 变"隐藏"；AS-W2(待审核)/AS-W3(隐藏)/AS-W4(已驳回) 状态不变；AS-O 的 AS-W5 仍是"展示"。
+2. as_02_enableDoesNotRestoreWorks：先禁用再启用（PUT 两次），AS-W1 仍为"隐藏"（不自动恢复）。
+3. as_03_approveDisabledAuthorAutoRejects：AS-U 禁用后，PUT /admin/work/AS-W2/approve → 409、响应 msg 为「作者账号已被禁用，已自动驳回」；库里 AS-W2 变"已驳回"；waudit 该 pid 新增恰好一条 act='reject' 且 reason='作者账号已被禁用'、uadmin 为管理员 uid。
+4. as_04_approveNormalAuthorStillWorks：AS-U 正常时 PUT /admin/work/AS-W2/approve → 200 且 data 恰 {pid,status:"展示"}，AS-W2 变"展示"。
+5. as_05_selfDisableForbiddenNoSideEffect：管理员 PUT 自己的 status 为禁用 → 403；且自己的展示作品（若无则跳过该断言）状态不变。
+
+代码要求：中文注释 + 每个测试方法上方一行 Javadoc 说明它验证哪条契约；UTF-8 无 BOM；Java 8 语法（不能用 var / List.of）。
+写盘后先自查文件存在且字节数 > 4000，再输出不超过 20 行的结论（包含：文件路径、用例清单、你无法运行 Maven 所以未跑）。
+
+最后只输出这些，不要复述代码。

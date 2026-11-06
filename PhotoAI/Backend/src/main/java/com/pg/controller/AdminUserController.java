@@ -27,6 +27,12 @@ public class AdminUserController {
         this.adminUserService = adminUserService;
     }
 
+    /** @param uids 逗号分隔的用户编号 @param request 已验证操作者 @return 本页按钮保护信封 */
+    @GetMapping("/guards")
+    public AjaxResult guards(@RequestParam String uids, HttpServletRequest request) {
+        return AjaxResult.success(adminUserService.guards(uids, (String) request.getAttribute("uid")));
+    }
+
     /**
      * 查询用户分页，无数据库写入。
      * @param keyword 可选昵称片段
@@ -56,14 +62,16 @@ public class AdminUserController {
     }
 
     /**
-     * 删除无作品用户，不级联删除其它业务数据。
+     * 删除用户；仅字面量 cascade=true 时一并清理作品及关联数据。
      * @param uid 目标用户编号
+     * @param cascade 可选原始参数，不转换类型、不去除空白
      * @param request 含已验证操作者 uid 的请求
-     * @return data 为 null 的成功信封
+     * @return 普通删除 data 为 null；级联删除返回 uid 与实际删除作品数
      */
     @DeleteMapping("/{uid}")
-    public AjaxResult delete(@PathVariable String uid, HttpServletRequest request) {
-        adminUserService.delete(uid, (String) request.getAttribute("uid"));
-        return AjaxResult.success();
+    public AjaxResult delete(@PathVariable String uid, @RequestParam(required = false) String cascade,
+                             HttpServletRequest request) {
+        return AjaxResult.success(adminUserService.delete(uid, (String) request.getAttribute("uid"),
+                "true".equals(cascade)));
     }
 }

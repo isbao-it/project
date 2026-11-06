@@ -1,0 +1,41 @@
+实现「管理端后端一揽子」卡。必读（先读完再动手）：
+- docs/cards/AD_管理端后端_执行卡.md（本卡，白名单与 GWT）
+- docs/接口增补_ADMIN.md（契约权威，字段名/参数/错误码逐字执行）
+- docs/接口冻结_v1.md §2、§七（信封、命名与风格）
+- Backend/src/test/java/com/pg/AdminApiTest.java（**冻结测试，只读，一个字符都不许改**）
+- Backend/src/main/java/com/pg/controller/{AdminWorkController,AdminUserController,PageController}.java
+- Backend/src/main/java/com/pg/service/{AuditService,AdminUserService}.java 及其 impl
+- Backend/src/main/resources/mapper/{AuditMapper,AdminUserMapper}.xml
+- 参考既有写法：AuditServiceImpl（同事务、条件更新、BizException）、AdminUserServiceImpl（保护锁）
+
+冻结事实（不要重做、不要质疑）：
+- 测试已冻结，SHA256=b1ad9c88a8e493befd5f0c207009bc30d09fdbc71db61092bae99cc5047bebe1。当前红态 25 跑 / 24 失败 / 0 error，失败原因全部是目标接口 404 与 /page/admin/works 未映射。
+- 你的目标是让这 25 个用例转绿，不许改测试、不许 skip、不许特判测试环境。
+
+必须实现的六个接口（签名与字段以 docs/接口增补_ADMIN.md 为准）：
+1. GET /admin/stats —— 七键；同一只读事务（REPEATABLE_READ 快照）；今日通过按 ZoneId.systemDefault() 当日 [00:00,次日00:00) 且 act='pass' 去重 COUNT(DISTINCT pid)；分类末尾固定追加 {pcid:null,pcname:"未分类"}。
+2. GET /admin/work/{pid} —— data 恰 work/exif/author；任意四状态可查；不增 viewcount；author 只含 uid/nickname/avatar。
+3. GET /admin/work/list —— status/keyword/category/page/size 严格校验（非法 400、不 trim、不接受 pageNum/pageSize 别名）；AdminWork 恰 17 键；cwtime DESC,pid ASC；data 恰 {list,total}。
+4. PUT /admin/work/{pid}/status —— 只接受 展示/隐藏；展示↔隐藏 200 无日志；同态幂等；已驳回→展示 200 且同事务追加唯一 waudit(pass,NULL,当前管理员)；已驳回→隐藏 409；待审核→* 409。状态写入只能由 AuditMapper 新增方法承担（同事务锁读+条件更新）。
+5. GET /admin/user/guards —— uids 逗号 1–50 个不重复；每项恰 5 键；优先级 self>last_admin>has_works；整次失败 data=null。
+6. PageController 新增 /page/admin/works → pwork/pworkList、/page/admin/users → user/userList（加管理员注解）。
+
+硬约束：
+- 只写卡面白名单里的文件；**templates/** 与 static/admin/** 一律不写不读改**（页面由主持人交付）。
+- 不新增实体/DTO/公共工具类，用显式 Map 投影；不新增 DDL/索引/迁移/缓存。
+- 不得改 AuditService/Impl 既有方法签名、不得放宽作者接口、不得给 AdminUser 加字段（AuditApiTest 严格八键）。
+- 不新增依赖、不改 POM、不改拦截器、不执行任何 git 命令。
+- Java 8 语法；中文注释 + 公共方法 Javadoc + 复杂逻辑写"为什么"；风格照 AuditServiceImpl。
+- 写盘只用编辑器/Java 工具，禁 PowerShell 重定向；产出 UTF-8 无 BOM。
+
+真跑（先定向后全量，逐条记录退出码与 Tests run/Failures/Errors）：
+export JAVA_HOME=/c/develop-tools/JDK/jdk1.8.0_504; export PATH="$JAVA_HOME/bin:$PATH"
+export HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 NO_PROXY=localhost,127.0.0.1
+cd "C:/work/dev/projects/PhotoAI Hub/Backend"
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AdminApiTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp -Dtest=AuditApiTest test
+bash /c/Users/朱柏缘/AppData/Local/hermes/skills/windows-java-maven-jdk8/scripts/mvn8 -B -ntp test
+
+失败先归因：实现缺口 / 测试缺陷 / 环境。Errors>0 先修自己的编译或上下文问题；不许改断言求绿。
+
+交回格式：改动文件清单（逐个）+ 每个接口的证据（定向用例名与结果，必要时贴原始响应）+ 三条命令的 Tests run/Failures/Errors/退出码 + 未验证项 + 不确定点。先写产物再写总结。

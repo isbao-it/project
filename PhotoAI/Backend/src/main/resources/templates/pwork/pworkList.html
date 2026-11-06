@@ -1,146 +1,145 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:include="common::title('摄影作品列表')"></head>
-<body>
-<div class="layuimini-container">
-    <div class="layuimini-main">
-        <fieldset class="table-search-fieldset">
-            <legend>搜索信息</legend>
-            <div style="margin: 10px;">
-                <div class="layui-form-item">
-                    <div class="layui-inline layui-form-pane">
-                        <label class="layui-form-label">作品标题</label>
-                        <div class="layui-input-inline">
-                            <input autocomplete="off" class="layui-input" id="wtitle" name="wtitle" placeholder="请输入标题关键字">
-                        </div>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/layout :: head('作品管理')"></head>
+<body class="page-fill">
+<div class="admin-app">
+    <aside th:replace="admin/layout :: sidebar('works')"></aside>
+    <div class="admin-main">
+        <div th:replace="admin/layout :: topbar('作品管理', 'PhotoAI 管理台 / 内容 / 作品管理')"></div>
+        <div class="admin-body">
+            <p th:replace="admin/layout :: feedback"></p>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <div class="seg" id="statusSeg" role="tablist" aria-label="按状态筛选">
+                        <button type="button" class="active" data-status="">全部 <span class="c" id="cAll">–</span></button>
+                        <button type="button" data-status="展示">展示 <span class="c" id="cVisible">–</span></button>
+                        <button type="button" data-status="待审核">待审核 <span class="c" id="cPending">–</span></button>
+                        <button type="button" data-status="隐藏">隐藏 <span class="c" id="cHidden">–</span></button>
+                        <button type="button" data-status="已驳回">已驳回 <span class="c" id="cRejected">–</span></button>
                     </div>
-                    <div class="layui-inline layui-form-pane">
-                        <label class="layui-form-label">作品描述</label>
-                        <div class="layui-input-inline">
-                            <input autocomplete="off" class="layui-input" id="wdesc" name="wdesc" placeholder="请输入描述关键字">
-                        </div>
-                    </div>
-                    <div class="layui-inline layui-form-pane">
-                        <label class="layui-form-label" style="width: 90px">作品状态</label>
-                        <div class="layui-input-inline" style="width: 120px">
-                            <select id="wstatus" name="wstatus" class="layui-input">
-                                <option value="">全部</option>
-                                <option value="展示">展示</option>
-                                <option value="隐藏">隐藏</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="layui-inline">
-                        <button class="layui-btn layui-btn-normal" id="searchBtn" lay-submit><i class="layui-icon"></i> 搜 索</button>
-                    </div>
+                    <div class="spacer"></div>
+                    <span class="sub" id="worksTotal">—</span>
+                </div>
+
+                <div class="filter-row">
+                    <input class="field" id="keyword" style="width:230px" placeholder="搜索标题 / 作者 / 作品 ID" autocomplete="off">
+                    <select class="field" id="category" aria-label="分类">
+                        <option value="">全部分类</option>
+                    </select>
+                    <button type="button" class="btn primary" id="searchBtn">查询</button>
+                    <button type="button" class="btn" id="resetBtn">重置</button>
+                    <button type="button" class="btn" id="addCategoryBtn" title="新增作品分类">+ 新增分类</button>
+                </div>
+
+                <div class="table-scroll">
+                <table class="data-table">
+                    <caption class="sr-only">作品列表</caption>
+                    <thead>
+                    <tr>
+                        <th style="width:78px">图片</th>
+                        <th>作品</th>
+                        <th>作者</th>
+                        <th>分类</th>
+                        <th>状态</th>
+                        <th>提交时间</th>
+                        <th style="width:200px">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="workRows">
+                    <tr><td colspan="7" class="empty">正在加载…</td></tr>
+                    </tbody>
+                </table>
+                </div>
+                <div class="pager">
+                    <span id="worksPageInfo">—</span>
+                    <div class="spacer"></div>
+                    <button type="button" class="pg" id="worksPrev" disabled>‹</button>
+                    <span id="worksPageNum">1</span>
+                    <button type="button" class="pg" id="worksNext" disabled>›</button>
                 </div>
             </div>
-        </fieldset>
-
-        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter">
-            <script type="text/html" id="rowToolbarTpl">
-                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="detail">详情</a>
-            </script>
-        </table>
+        </div>
     </div>
 </div>
 
-<script charset="utf-8" th:src="@{/static/lib/layui-v2.5.5/layui.js}"></script>
-<script th:inline="none">
-    layui.use(['form', 'table', 'layer'], function () {
-        var $ = layui.jquery,
-            form = layui.form,
-            layer = layui.layer,
-            table = layui.table;
+<div class="modal-mask" id="categoryMask" hidden>
+    <div class="modal-box narrow" role="dialog" aria-modal="true" aria-label="新增分类">
+        <div class="modal-head">
+            <h3>新增分类</h3>
+            <button type="button" class="btn small ghost" id="categoryClose">关闭</button>
+        </div>
+        <div class="modal-body">
+            <label class="field-label" for="newCategoryName">分类名称</label>
+            <input class="field" id="newCategoryName" maxlength="20" placeholder="1-20 个字，如「人像摄影」" autocomplete="off">
+            <p class="hint" id="categoryTip">新增后立即出现在筛选下拉与作品发布页；分类名不可重复。</p>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn" id="categoryCancel">取消</button>
+            <button type="button" class="btn primary" id="categorySave">保存</button>
+        </div>
+    </div>
+</div>
 
-        table.render({
-            elem: '#currentTableId',
-            url: '/pwork/list',
-            request: { pageName: 'pageNum', limitName: 'pageSize' },
-            limits: [6, 12, 20, 50],
-            limit: 6,
-            page: true,
-            parseData: function(res) {
-                return {
-                    code: res.code === 'ok' ? 0 : 1,
-                    msg: res.msg,
-                    count: res.total,
-                    data: res.data
-                };
-            },
-            defaultToolbar: ['filter', 'exports', 'print'],
-            where: {
-                // 管理员看全部，普通用户只看自己的作品
-                uid: (localStorage.getItem('role') === '管理员') ? '' : (localStorage.getItem('uid') || '')
-            },
-            cols: [[
-                {field: 'pid', width: 200, title: '作品ID', align: 'center'},
-                {field: 'wtitle', width: 200, title: '作品标题', align: 'center'},
-                {field: 'wdesc', width: 250, title: '作品描述', align: 'center'},
-                {field: 'viewcount', width: 100, title: '浏览量', align: 'center'},
-                {field: 'votecount', width: 100, title: '投票数', align: 'center'},
-                {field: 'likep', width: 100, title: '点赞数', align: 'center'},
-                {field: 'wstatus', width: 100, title: '状态', align: 'center', templet: function(d) {
-                        return d.wstatus === '展示' ? '<span style="color:green;">展示</span>' : '<span style="color:gray;">隐藏</span>';
-                    }},
-                {field: 'cwtime', width: 170, title: '创建时间', align: 'center', templet: function(d) {
-                        return d.cwtime || '';
-                    }},
-                {fixed: 'right', width: 100, align: 'center', title: '操作', toolbar: '#rowToolbarTpl'}
-            ]],
-            id: 'pworkTable'
-        });
+<div class="modal-mask" id="detailMask" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="作品详情">
+        <div class="modal-head">
+            <h3 id="modalTitle">作品详情</h3>
+            <button type="button" class="btn small ghost" id="modalClose">关闭</button>
+        </div>
+        <div class="modal-hero" id="modalHero"></div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
 
-        // 普通用户搜索时也要保留 uid 过滤
-        var baseUid = (localStorage.getItem('role') === '管理员') ? '' : (localStorage.getItem('uid') || '');
-
-        $('#searchBtn').on('click', function () {
-            table.reload('pworkTable', {
-                where: {
-                    uid: baseUid,
-                    wtitle: $('#wtitle').val(),
-                    wdesc: $('#wdesc').val(),
-                    wstatus: $('#wstatus').val()
-                },
-                page: {curr: 1}
-            });
-        });
-
-        table.on('tool(currentTableFilter)', function (obj) {
-            var data = obj.data;
-            if (obj.event === 'detail') {
-                $.get('/pwork/' + data.pid, function(res) {
-                    if (res.code === 'ok' && res.data) {
-                        var p = res.data;
-                        var html = '<div style="padding:20px;line-height:1.8;">' +
-                            '<div style="text-align:center; margin-bottom:15px;">' +
-                            '<img src="' + (p.vurl || '/static/images/default.jpg') + '" style="max-width:100%;max-height:200px;" onerror="this.src=\'/static/images/default.jpg\'">' +
-                            '</div>' +
-                            '<p><strong>作品ID：</strong>' + (p.pid || '') + '</p>' +
-                            '<p><strong>作品标题：</strong>' + (p.wtitle || '') + '</p>' +
-                            '<p><strong>作品描述：</strong>' + (p.wdesc || '') + '</p>' +
-                            '<p><strong>浏览量：</strong>' + (p.viewcount || '0') + '</p>' +
-                            '<p><strong>投票数：</strong>' + (p.votecount || '0') + '</p>' +
-                            '<p><strong>点赞数：</strong>' + (p.likep || '0') + '</p>' +
-                            '<p><strong>状态：</strong>' + (p.wstatus === '展示' ? '<span style="color:green;">展示</span>' : '<span style="color:gray;">隐藏</span>') + '</p>' +
-                            '<p><strong>创建时间：</strong>' + (p.cwtime || '') + '</p>' +
-                            '</div>';
-                        layer.open({
-                            title: '作品详情 - ' + p.wtitle,
-                            type: 1,
-                            area: ['600px', '500px'],
-                            content: html,
-                            btn: ['关闭']
-                        });
-                    } else {
-                        layer.msg(res.msg || '获取详情失败', {icon: 2});
-                    }
-                }).fail(function() {
-                    layer.msg('请求失败，请检查网络', {icon: 2});
-                });
-            }
-        });
-    });
-</script>
+<style>
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .modal-mask {
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 20, 16, .45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+    }
+    .modal-mask[hidden] { display: none; }
+    .modal-box {
+        width: min(860px, calc(100vw - 80px));
+        max-height: calc(100vh - 80px);
+        background: #fff;
+        border-radius: 14px;
+        overflow: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    }
+    .modal-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 1;
+    }
+    .modal-head h3 { margin: 0; font-size: 14px; }
+    .modal-head .btn { margin-left: auto; }
+    .modal-hero { height: 320px; background: #1C1714; display: flex; align-items: center; justify-content: center; }
+    .modal-hero img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .modal-hero .empty { color: #8C7F76; }
+    .modal-body { padding: 16px 18px 20px; }
+    .modal-body .desc { color: var(--ink2); font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; margin: 8px 0 14px; }
+    .modal-body .exif-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .modal-body .exif-grid div { background: #FCFAF9; border: 1px solid #F3EEEA; border-radius: 9px; padding: 9px 11px; }
+    .modal-body .exif-grid span { display: block; font-size: 10px; color: var(--ink3); margin-bottom: 3px; }
+    .modal-body .exif-grid b { font-size: 12px; }
+    /* 新增分类弹层：内容少，收窄宽度；底部按钮右对齐 */
+    .modal-box.narrow { max-width: 420px; }
+    .modal-body .field-label { display: block; font-size: 12px; color: var(--ink2); margin-bottom: 6px; }
+    .modal-body .hint { font-size: 11.5px; color: var(--ink3); line-height: 1.6; margin: 9px 0 0; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 0 18px 18px; }
+</style>
+<script th:src="@{/static/admin/admin-works.js(v=20261106c)}"></script>
 </body>
 </html>

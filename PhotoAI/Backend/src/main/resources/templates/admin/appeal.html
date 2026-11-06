@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/layout :: head('申诉处理')"></head>
+<body>
+<div class="admin-app">
+    <aside th:replace="admin/layout :: sidebar('appeal')"></aside>
+    <div class="admin-main">
+        <div th:replace="admin/layout :: topbar('申诉处理', 'PhotoAI 管理台 / 账号 / 申诉处理')"></div>
+        <div class="admin-body">
+            <p th:replace="admin/layout :: feedback"></p>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <div class="seg" id="statusSeg" role="tablist" aria-label="按状态筛选">
+                        <button type="button" class="active" data-status="">全部 <span class="c" id="cAll">–</span></button>
+                        <button type="button" data-status="待处理">待处理 <span class="c" id="cPending">–</span></button>
+                        <button type="button" data-status="已受理">已受理 <span class="c" id="cAccepted">–</span></button>
+                        <button type="button" data-status="已驳回">已驳回 <span class="c" id="cRejected">–</span></button>
+                    </div>
+                    <div class="spacer"></div>
+                    <span class="sub" id="appealTotal">—</span>
+                </div>
+
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th style="width:210px">申诉人</th>
+                            <th>申诉理由</th>
+                            <th style="width:130px">提交时间</th>
+                            <th style="width:90px">状态</th>
+                            <th style="width:130px">处理人</th>
+                            <th style="width:200px">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="appealRows">
+                        <tr><td colspan="6" class="empty">加载中…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pager">
+                    <button type="button" class="pg" id="appealPrev" disabled>‹</button>
+                    <span id="appealPageInfo">–</span>
+                    <button type="button" class="pg" id="appealNext" disabled>›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 驳回理由弹层：驳回必须留痕，理由会被申诉人看到 -->
+<div class="modal-mask" id="rejectMask" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="驳回申诉">
+        <div class="modal-head">
+            <h3>驳回申诉</h3>
+            <button type="button" class="btn small ghost" id="rejectClose">关闭</button>
+        </div>
+        <div class="modal-body">
+            <label class="field-label" for="rejectReason">驳回理由（1-200 字）</label>
+            <textarea class="field" id="rejectReason" rows="3" maxlength="200" placeholder="说明为什么不解除封禁，申诉人会看到这段文字"></textarea>
+            <p class="hint" id="rejectTip">账号会保持封禁状态；理由必填。</p>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="btn" id="rejectCancel">取消</button>
+            <button type="button" class="btn danger" id="rejectSave">确认驳回</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 申诉理由可能较长，限制列宽并换行，避免撑破表格 */
+    #appealRows .reason { max-width: 520px; white-space: pre-wrap; word-break: break-word; line-height: 1.65; }
+    #appealRows .who { display: flex; align-items: center; gap: 9px; }
+    #appealRows .who img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+    #appealRows .who b { font-size: 12.5px; }
+    #appealRows .who span { display: block; font-size: 10.5px; color: var(--ink3); }
+    #appealRows .actions { display: flex; gap: 8px; }
+    .modal-mask { position: fixed; inset: 0; background: rgba(30, 20, 14, .42); display: flex; align-items: center; justify-content: center; z-index: 60; }
+    .modal-mask[hidden] { display: none; }
+    .modal-box { width: 92vw; max-width: 520px; background: #fff; border-radius: 14px; box-shadow: 0 18px 50px rgba(40, 24, 12, .22); }
+    .modal-head { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid #F3EEEA; }
+    .modal-head h3 { margin: 0; font-size: 14px; }
+    .modal-head .btn { margin-left: auto; }
+    .modal-body { padding: 16px 18px 4px; }
+    .modal-body .field-label { display: block; font-size: 12px; color: var(--ink2); margin-bottom: 6px; }
+    .modal-body .hint { font-size: 11.5px; color: var(--ink3); line-height: 1.6; margin: 9px 0 0; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 18px 18px; }
+</style>
+<script th:src="@{/static/admin/admin-appeal.js(v=20261106b)}"></script>
+</body>
+</html>

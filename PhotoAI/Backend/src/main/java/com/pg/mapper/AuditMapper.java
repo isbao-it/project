@@ -8,6 +8,13 @@ import java.util.Map;
 /** 审核专用数据访问，独立承担审核状态写入和日志追加。 */
 @Mapper
 public interface AuditMapper {
+    /** @param pid 作品编号 @return 锁定后的状态与最近日志时间，不存在为 null */
+    Map<String, Object> lockStatus(@Param("pid") String pid);
+
+    /** @param pid 作品编号 @param current 锁定读得到的旧状态 @param status 目标状态 @return 非待审条件更新行数 */
+    int updateNonPending(@Param("pid") String pid, @Param("current") String current,
+                         @Param("status") String status);
+
     /** @return 固定待审核过滤后的总数 */
     Long countPending();
 

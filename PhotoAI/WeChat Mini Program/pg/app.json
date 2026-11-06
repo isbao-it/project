@@ -10,7 +10,8 @@
     "pages/userDetail/userDetail",
     "pages/category/category",
     "pages/relation/relation",
-    "pages/workEdit/workEdit"
+    "pages/workEdit/workEdit",
+    "pages/appeal/appeal"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",

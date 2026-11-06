@@ -477,9 +477,9 @@ public class UserController {
             throw new BizException(ErrorCode.UNAUTHORIZED, "手机号或密码错误");
         }
 
-        // 3. 检查账号状态
+        // 3. 检查账号状态：禁用要给明确封禁提示，不能与"密码错误"混为一谈
         if (!"正常".equals(user.getStatus())) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, 401);
+            throw new BizException(ErrorCode.ACCOUNT_DISABLED, "账号已被封禁");
         }
         if (!"管理员".equals(user.getRole())) {
             throw new BizException(ErrorCode.FORBIDDEN, "仅管理员可登录后台");
